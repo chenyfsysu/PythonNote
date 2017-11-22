@@ -9,23 +9,47 @@ for l in lst:
 ```
 
 ### 遍历list特定步长
-```python
+``` python
 a = [1, 2, 3, 4, 5]
 for i in a[::2]:
 	print i
 # 1 3 5 list[start:end:step]
 ```
 
+### 预设字典默认值
+``` python
+groups = {}
+for (key, value) in data:
+    groups.setdefault(key, []).append(value)
+```
+
+### 列表解析
+``` python
+lst = [1, 2, 3, 4, 5]
+lst1 = [x for x in lst if x > 3]
+# lst1 = [4, 5]
+```
+
 ### 字符串拼接
-```python
+``` python
 lst = ['My', 'Name', 'is', 'coco']
 str = ' '.join(lst)
 ```
+
+### dict合并
+``` python
+a = {'name': 'coco', 'score': 20}
+b = {'age': 18, 'id': 2933}
+a.update(b)
+# a = {'age': 18, 'score': 20, 'name': 'coco', 'id': 2933}
+```
+
 ### unpack
 ```python
 data = ('coco', '90, True)
 name, score, _ = data
 ```
+
 ### enmurate
 ```python
 lst = ['coco', 'jang']
@@ -76,4 +100,13 @@ lst = map(lambda x: x * 100, lst)
 lst = [1, 2, 3]
 sum = recude(lambda x, y: x + y, lst)
 # sum = 6
+```
+
+### bisect排序模块(找出列表中的插入位置)
+```python
+import bisect
+
+a = [2, 3, 6, 7, 9]
+idnex = bisect.bisect(a, 5)
+# index = 2
 ```
