@@ -54,7 +54,7 @@ printVal()  # 3 2 3
 Base修改val值为3后Inherit1的值没有修改，但是Inherit2的值却修改了，这是因为python类的属性都保留在dict中，访问属性时如果自身没有就访问父类属性，而Inherit1的val赋值后已经在自身属性添加了val。
 
 
-# 五、__cmp__重写
+#### 五、__cmp__重写
 ``` python
 class AchvItem(object):
 	def __init__(self, name, score, time):
@@ -79,6 +79,6 @@ lst = [a, b, c]
 
 lst.remove(c)
 for item in lst:
-	print item.name  # a b
+	print item.name  # b c
 ```
 AchvItem包含score(分数), time(时间)，本想重写__cmp__以便AchvItem的排序，但实际上会影响到remove等操作，因为remove的时候会调用__cmp__检查是否是待删除元素。这里本想删除c， 因为a、c的score、time相同，__cmp__检验通过，实际上把a给删除了。
