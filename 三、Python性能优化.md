@@ -1,4 +1,4 @@
-#### 一、使用while 1而不是while True
+### 一、使用while 1而不是while True
 ``` python
 import timeit
  
@@ -24,7 +24,7 @@ print "while one: %s\nwhile_true: %s" % (w1, wt)
 ```
 while 1比while True要快近三分之一（python 2），这是因为True和False不是关键字，每次执行都要对它们的值进行检查，而1在字节码中是个常量因此运行更快些。在Pyhton3中True和False已经成为关键字，运行速度可能差不多。
 
-#### 二、if x比if x ==更快
+### 二、if x比if x ==更快
 ``` python
 import timeit
  

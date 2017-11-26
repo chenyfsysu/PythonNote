@@ -1,14 +1,14 @@
-Pythonic的意思是在编写Python代码更符合Python风格。作为程序员，我们一般先接触C、C++等语言再接触Python，在编写Python代码时容易受到这些语言的编程思维影响，代码显得Non-Pythonic。以下总结Python编程中一些典型的Pythonic代码风格。
+Pythonic的意义是在编写Python代码更符合Python风格。作为程序员，我们一般先接触C、C++等语言再接触Python，在编写Python代码时容易受到这些语言的编程思维影响，代码显得Non-Pythonic。以下总结Python编程中一些典型的Pythonic代码风格。
 
 
-### 遍历list
+### 一、遍历list
 ```python
 lst = [1, 2, 3, 4, 5]
 for l in lst:
     pass
 ```
 
-### 遍历list特定步长
+### 二、遍历list特定步长
 ``` python
 a = [1, 2, 3, 4, 5]
 for i in a[::2]:
@@ -16,27 +16,27 @@ for i in a[::2]:
 # 1 3 5 list[start:end:step]
 ```
 
-### 预设字典默认值
+### 三、预设字典默认值
 ``` python
 groups = {}
 for (key, value) in data:
     groups.setdefault(key, []).append(value)
 ```
 
-### 列表解析
+### 四、列表解析
 ``` python
 lst = [1, 2, 3, 4, 5]
 lst1 = [x for x in lst if x > 3]
 # lst1 = [4, 5]
 ```
 
-### 字符串拼接
+### 五、字符串拼接
 ``` python
 lst = ['My', 'Name', 'is', 'coco']
 str = ' '.join(lst)
 ```
 
-### dict合并
+### 六、dict合并
 ``` python
 a = {'name': 'coco', 'score': 20}
 b = {'age': 18, 'id': 2933}
@@ -44,13 +44,13 @@ a.update(b)
 # a = {'age': 18, 'score': 20, 'name': 'coco', 'id': 2933}
 ```
 
-### unpack
+### 七、unpack
 ```python
 data = ('coco', '90, True)
 name, score, _ = data
 ```
 
-### enmurate
+### 八、enmurate
 ```python
 lst = ['coco', 'jang']
 for index, name in enmurate(lst):
@@ -59,7 +59,7 @@ for index, name in enmurate(lst):
 # 1 jang
 ```
 
-### for...else...
+### 九、for...else...
 ```python
 lst = [1, 3, 4, 7]
 for val in lst:
@@ -70,14 +70,14 @@ else:
     print 'no number greater than 10
 ```
 
-### filter
+### 十、filter
 ```python
 lst = [1, 2, 3, 4, 5]
 lst = filter(lambda x: x > 2, lst)
 # 3 4 5
 ```
 
-### zip
+### 十一、zip
 ```python
 names = ['coco', 'jang', 'peter']
 scores = [90, 30, 40, 50]
@@ -88,21 +88,21 @@ for name, score in zip(names, scores):
 # peter 40
 ```
 
-### map
+### 十二、map
 ```python
 lst = [1, 2, 3]
 lst = map(lambda x: x * 100, lst)
 # lst = [100, 200, 300]
 ```
 
-### reduce
+### 十三、reduce
 ```python
 lst = [1, 2, 3]
 sum = recude(lambda x, y: x + y, lst)
 # sum = 6
 ```
 
-### bisect排序模块(找出列表中的插入位置)
+### 十四、bisect排序模块(找出列表中的插入位置)
 ```python
 import bisect
 
