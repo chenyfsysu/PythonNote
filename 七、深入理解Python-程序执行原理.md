@@ -133,7 +133,7 @@ PyObject * PyRun_StringFlags(const char *str, int start, PyObject *globals,
     return ret;
 }
 ```
-### 四、run_mod执行Python代码
+### 五、run_mod执行Python代码
 通过以上已经准备好了代码执行的大部分环境到了run_mod这一步。run_mod的两项重要任务是生成字节码、执行字节码。
 ```
 static PyObject *run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
