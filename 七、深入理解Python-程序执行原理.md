@@ -149,7 +149,7 @@ static PyObject *run_mod(mod_ty mod, const char *filename, PyObject *globals, Py
     return v;
 }
 ```
-##### 1）PyAST_Compile 生成字节码
+#### 1）PyAST_Compile 生成字节码
 PyAST_Compile根据语法分析树编译成字节码，返回的是PyCodeObject。
 ``` c
 PyCodeObject *PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
@@ -162,5 +162,5 @@ PyCodeObject *PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *f
     return co;
 }
 ```
-##### 2）PyEval_EvalCode 虚拟机执行字节码
+#### 2）PyEval_EvalCode 虚拟机执行字节码
 PyEval_EvalCode根据PyCodeObject执行字节码内容(实际通过PyEval_EvalCodeEx执行）。PyEval_EvalCodeEx是通过虚拟机直接字节码比较复杂，后面理解虚拟机执行原理会深入理解。
