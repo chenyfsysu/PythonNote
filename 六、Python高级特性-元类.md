@@ -15,7 +15,7 @@ print Object__class__  # <type 'type'>
 打印出来发现Object的类是type这东西，那么type是什么呢?
 ### 二、元类
 事实上，type正是我们这篇要介绍的：元类。元类、类、对象的关系：元类的实例是类，类的实例是对象(元类的类是它自己）：
-![metaclass](https://github.com/chenyfsysu/PythonNote/src/metaclass.png)
+![metaclass](https://github.com/chenyfsysu/PythonNote/blob/master/src/metaclass.png)
 我们可以通过元类type实例化一个类，我们可以通过type实例化一个Math类，并为这个类绑定一个add方法。
 ``` python
 def add(self, a, b):
@@ -31,7 +31,7 @@ rsl = math.add(1, 2)
 print rsl  # 3
 ```
 可以看到通过type('Math', (object, ), dict(add=add))， 确实动态实例化一个Math类，通过这个类也可以正常实例化math方法。
-三、利用元类实现ORM
+### 三、利用元类实现ORM
 以上介绍可以看到通过类是由元类实例化，类的类是元类。从元类的特性看，我们可以知道元类可以动态地改变类的行为，这个动态特性让操作类更加方便。用过django的同学一定都会觉得框架里面的Model非常模型，通过定义Model的数据库字段就能自动读写数据库。
 ``` python
 from django.db import models
@@ -43,7 +43,7 @@ person = Person():
 person.save()  # 通过save可以自动存储
 ```
 可以看到Model确实能够方便，它能够自动识别定义的数据库字段，将对象的成员和数据库字段一一对应。那django内部是怎么完成这点的呢？每次存储遍历Person的所有字段，如果是Field的子类就存储？这显然是效率低下的。事实上，django实现Model的ORM框架正式通过元类实现的。Model的元类ModelBase(可以通过__metaclass__指定元类), 在创建Model类的时候，就检查其所有的Field属性并将其存储起来。下面我们实现一个类似django Model的ORM框架。
-```
+``` python
 class BaseField(object):
 	def serialize(self):
 		raise NotImplementedError
