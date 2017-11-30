@@ -81,7 +81,6 @@ for item in lst:
 	print item.name  # b c
 ```
 AchvItem包含score(分数), time(时间)，本想重写__cmp__以便AchvItem的排序，但实际上会影响到remove等操作，因为remove的时候会调用__cmp__检查是否是待删除元素。这里本想删除c， 因为a、c的score、time相同，__cmp__检验通过，实际上把a给删除了。
-
 ### 六、写操作默认使用局部变量
 ``` python
 def foo():
