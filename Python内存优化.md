@@ -1,5 +1,5 @@
 ### 一、使用__slot__
-```
+``` python
 import sys
 
 class Object(object):

@@ -1,9 +1,9 @@
 # PythonNote
 A Series of Pyhton Note
 
-* [一、Pythonic](https://github.com/chenyfsysu/PythonNote/blob/master/%E4%B8%80%E3%80%81Pythonic.md)
+* [一、Pythonic](https://github.com/chenyfsysu/PythonNote/blob/master/Pythonic.md)
 * [二、Python坑汇总](https://github.com/chenyfsysu/PythonNote/blob/master/Python坑汇总.md)
-* [三、Python坑汇总](https://github.com/chenyfsysu/PythonNote/blob/master/Python类继承与mro.md)
+* [三、Python类继承与mro](https://github.com/chenyfsysu/PythonNote/blob/master/Python类继承与mro.md)
 * [四、Python性能优化](https://github.com/chenyfsysu/PythonNote/blob/master/Python性能优化.md)
 * [五、Python内存优化](https://github.com/chenyfsysu/PythonNote/blob/master/Python内存优化.md)
 * [六、Python高级特性-装饰器](https://github.com/chenyfsysu/PythonNote/blob/master/Python高级特性-装饰器.md)
