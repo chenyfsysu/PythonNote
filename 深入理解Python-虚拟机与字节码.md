@@ -27,8 +27,9 @@ typedef struct {
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
 } PyCodeObject;
 ```
-
+可以看到PyCodeObject中保存了
 ### 三、Python虚拟机架构
+在编译了代码称谓字节码后，Python虚拟机就会接管后面程序的执行。在
 ``` c
 typedef struct _frame {
     PyObject_VAR_HEAD
