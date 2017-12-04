@@ -1,14 +1,23 @@
-import inspect
+class A(object):
+	def call(self, p1):
+		pass
 
-class A1(object): pass
-class B1(A1): pass
-class C1(A1): pass
-class D1(B1, C1): pass
+class B(A):
+	def call(self, p1, p2):
+		super(B, self).call(p1)
 
-class A2: pass
-class B2(A2): pass
-class C2(A2): pass
-class D2(B2, C2): pass
+class C(A):
+	def call(self):
+		pass
 
-print D1.__mro__
-print inspect.getmro(D2)
+
+class D(B, C):
+	def call(self, p1, p2):
+		super(D, self).call(p1, p2)
+
+
+# d = D()
+# d.call(1, 2)
+# TypeError: call() takes exactly 1 argument (2 given)
+
+print  D.__mro__
