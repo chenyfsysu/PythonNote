@@ -18,7 +18,7 @@
 
 ### 源码剖析
 * [源码剖析-程序执行原理](https://github.com/chenyfsysu/PythonNote/blob/master/源码剖析/源码剖析-程序执行原理.md)
-* [源源码剖析-PyStringObject字符串对象](https://github.com/chenyfsysu/PythonNote/blob/master/源码剖析/源码剖析-PyStringObject字符串对象.md)
+* [源码剖析-PyStringObject字符串对象](https://github.com/chenyfsysu/PythonNote/blob/master/源码剖析/源码剖析-PyStringObject字符串对象.md)
 * [源码剖析-PyListObject列表对象](https://github.com/chenyfsysu/PythonNote/blob/master/源码剖析/源码剖析-PyListObject列表对象.md)
 * [源码剖析-PyDictObject字典对象](https://github.com/chenyfsysu/PythonNote/blob/master/源码剖析/源码剖析-PyDictObject字典对象.md)
 * [源码剖析-虚拟机与字节码](https://github.com/chenyfsysu/PythonNote/blob/master/源码剖析/源码剖析-虚拟机与字节码.md)

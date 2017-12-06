@@ -1,9 +1,22 @@
-import sys
-def f():
-	for i in (1, 2, 3):
-		print i
+class Property(object):
+	def __init__(self, fget, fset):
+		self.fget = fget
+		self.fset = fset
 
-import dis
-dis.dis(f)
-# f.func_defaults = None
-# f()
+	def __get__(self, obj, cls):
+		return self.fget(obj)
+
+	def __set__(self, obj, val):
+		self.fset(obj, val)
+
+class Object(object):
+	def fget(self):
+		print 'fget called'
+
+	def fset(self, val):
+		print 'fset called', val
+
+	f = Property(fget, fset)
+
+o = Object()
+o.f
