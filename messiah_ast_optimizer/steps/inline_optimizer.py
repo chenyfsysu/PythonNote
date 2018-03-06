@@ -1,19 +1,25 @@
 # -*- coding:utf-8 -*-
 
-from base.optimizer import MessiahVisitor, MessiahTransformer, MessiahOptimizerStep
+from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 
 
 
-class InlineVisitor(MessiahVisitor):
-	SKIP = True
+class InlineVisitor(MessiahStepVisitor):
+	def visit_Name(self, node):
+		print '2222222222222222', node
 
 
-class InlineTransformer(MessiahTransformer):
+class InlineTransformer(MessiahStepTransformer):
+	def visit_Name(self, node):
+		print 'bbbbbbbbbbbbbbbbbbbb', node
+		return node
+
+
+class InlineTokenizer(MessiahStepTokenizer):
 	pass
 
 
-class InlineRecorder(MessiahRecorder):
-	pass
-
-
-MessiahOptimizer(InlineVisitor(), InlineTransformer(), InlineRecorder())
+class InlineOptimizerStep(MessiahOptimizerStep):
+	__tokenizer__ = InlineTokenizer
+	__visitor__  = InlineVisitor
+	__transformer__ = InlineTransformer

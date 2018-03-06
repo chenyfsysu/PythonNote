@@ -1,19 +1,24 @@
 # -*- coding:utf-8 -*-
 
-from base.optimizer import MessiahVisitor, MessiahTransformer, MessiahLocator, MessiahOptimizerStep
+from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+
+class ConstantTokenizer(MessiahStepTokenizer):
+	def visit_Comment(self, token, srow_scol, erow_ecol, line):
+		print '1111111111111111', token
+
+class ConstantVisitor(MessiahStepVisitor):
+	def visit_Name(self, node):
+		print '1111111111', node
 
 
-
-class ConstantVisitor(MessiahVisitor):
-	pass
-
-
-class ConstantTransformer(MessiahTransformer):
-	pass
+class ConstantTransformer(MessiahStepTransformer):
+	def visit_Call(self, node):
+		print 'aaaaaaaaaaaaaaaaa', node
+		return node
 
 
-class ConstantLocator(MessiahLocator):
-	pass
+class ConstantOptimizerStep(MessiahOptimizerStep):
+	__tokenizer__ = ConstantTokenizer
+	__visitor__  = ConstantVisitor
+	__transformer__ = ConstantTransformer
 
-
-ConstantOptimizer = MessiahOptimizerStep(ConstantVisitor(), ConstantTransformer(), ConstantLocator())
