@@ -32,6 +32,7 @@ def OptimizeStep(*stepcls):
 		kclass._tokenizer_steps = tokenizer_steps
 		kclass._visit_steps = visit_steps
 		kclass._transform_steps = transform_steps
+		kclass._optimize_steps = optimize_steps
 
 		return kclass
 
@@ -123,12 +124,23 @@ class MessiahTokenizer(object):
 
 
 class MessiahOptimizer(MessiahNodeTransformer, MessiahTokenizer):
+	def __init__(self):
+		super(MessiahOptimizer, self).__init__()
 
-	def optimize(self):
+		self.executing_file = ''
+
+	def executeTokenize(self, path, readline):
+		self.executing_file = path
+		self.tokenize(readline)
+
+	def executeVisit(self, path, tree):
 		pass
 
-	def visit(self):
+	def executeTransform(self, path, tree):
 		pass
 
-	def transform(self):
+	def endTokenize(self):
+		pass
+
+	def endVisit(self):
 		pass

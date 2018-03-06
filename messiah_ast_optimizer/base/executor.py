@@ -38,10 +38,11 @@ class OptimizeExecutor(object):
 					continue
 
 				self._executeTokenize(os.path.join(root, file))
+		self.optimizer.endTokenize()
 
 	def _executeTokenize(self, path):
 		file = open(path)
-		self.optimizer.tokenize(file.readline)
+		self.optimizer.executeTokenize(path, file.readline)
 
 		file.seek(0)
 		tree = ast.parse(file.read())
@@ -50,6 +51,7 @@ class OptimizeExecutor(object):
 	def executeVisit(self):
 		for path, tree in self.nodes.iteritems():
 			self.optimizer.visit(tree, path)
+		self.optimizer.endVisit()
 
 	def executeTransform(self):
 		modifys = {}

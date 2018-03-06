@@ -18,4 +18,3 @@ if __name__ == '__main__':
 	optimizer.tokenize(file.readline)
 	file.seek(0)
 	print file.read()
-
