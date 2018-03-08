@@ -21,8 +21,15 @@ class MessiahBaseVisitor(object):
 
 	def __init__(self):
 		super(MessiahBaseVisitor, self).__init__()
+		self.executing_file = ''
 
-	def generateResult():
+	def setupExecuting(self, file):
+		self.executing_file = file
+
+	def load(self):
+		pass
+
+	def dump(self):
 		pass
 
 
@@ -38,7 +45,7 @@ class MessiahStepVisitor(MessiahBaseVisitor):
 
 		self.tokenizer_data = None
 
-	def setupSupportData(self, tokenizer_data):
+	def load(self, tokenizer_data):
 		self.tokenizer_data = tokenizer_data
 
 
@@ -49,7 +56,7 @@ class MessiahStepTransformer(MessiahBaseVisitor):
 		self.tokenizer_data = None
 		self.visitor_data = None
 
-	def setupSupportData(self, tokenizer_data, visitor_data):
+	def load(self, tokenizer_data, visitor_data):
 		self.tokenizer_data = tokenizer_data
 		self.visitor_data = visitor_data
 
@@ -109,4 +116,4 @@ class MessiahOptimizerStep(object):
 
 	def visitTransform(self, key, node):
 		func = getattr(self.transformer, 'visit_%s' % key, None)
-		func and func(node)
+		return func(node)

@@ -98,7 +98,10 @@ class MessiahNodeTransformer(MessiahNodeVisitor):
 	def dispatchTransformCall(self, key, node):
 		steps = self._transform_steps[key]
 		for step in steps:
-			node = step.visitTransform(key, node)
+			new_node = step.visitTransform(key, node)
+			if type(new_node != node):
+				return new_node
+			node = new_node
 
 		return node
 
@@ -115,7 +118,8 @@ class MessiahTokenizer(object):
 		if type not in self.TokenMapping:
 			return
 		key = self.TokenMapping[type]
-		self.dispatchTokenizeCall(key, token, srow_scol, erow_ecol, line)
+		if key in self._tokenizer_steps:
+			self.dispatchTokenizeCall(key, token, srow_scol, erow_ecol, line)
 
 	def dispatchTokenizeCall(self, key, token, srow_scol, erow_ecol, line):
 		steps = self._tokenizer_steps[key]
@@ -124,23 +128,27 @@ class MessiahTokenizer(object):
 
 
 class MessiahOptimizer(MessiahNodeTransformer, MessiahTokenizer):
-	def __init__(self):
-		super(MessiahOptimizer, self).__init__()
-
-		self.executing_file = ''
 
 	def executeTokenize(self, path, readline):
-		self.executing_file = path
+		for step in self._optimize_steps:
+			step.tokenizer.setupExecuting(path)
+
 		self.tokenize(readline)
 
 	def executeVisit(self, path, tree):
-		pass
+		for step in self._optimize_steps:
+			step.visitor.setupExecuting(path)
+		self.visit(tree)
 
 	def executeTransform(self, path, tree):
-		pass
+		for step in self._optimize_steps:
+			step.transformer.setupExecuting(path)
+		return self.transform(tree)
 
 	def endTokenize(self):
-		pass
+		for step in self._optimize_steps:
+			step.visitor.load(step.tokenizer.dump())
 
 	def endVisit(self):
-		pass
+		for step in self._optimize_steps:
+			step.transformer.load(step.tokenizer.dump(), step.visitor.dump())

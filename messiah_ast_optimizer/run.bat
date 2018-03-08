@@ -1,2 +1,2 @@
-python main.py base/
+python main.py entities/
 pause

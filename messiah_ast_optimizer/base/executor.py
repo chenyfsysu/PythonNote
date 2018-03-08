@@ -5,6 +5,8 @@ from file import LazyFile
 
 import os
 import ast
+import unparser
+import scandir
 
 
 class OptimizeStatus(object):
@@ -22,41 +24,60 @@ class OptimizeExecutor(object):
 		self.ignore_dirs = [os.path.normpath(d) for d in ignore_dirs]
 		self.ignore_files = [os.path.normpath(f) for f in ignore_files]
 
-		self.nodes = {}
+		self.file = None
+		self.filter_files = {}
 
 	def execute(self):
+		self.filterExecuteFiles()
+
 		self.executeTokenize()
 		self.executeVisit()
 		self.executeTransform()
 
-	def executeTokenize(self):
-		for root, dirs, files in os.walk(self.path, topdown=True):
+	def filterExecuteFiles(self):
+		self.filter_files = {}
+		for root, dirs, files in scandir.walk(self.path, topdown=True):
 			dirs[:] = [d for d in dirs if os.path.normpath(os.path.join(root, d)) not in self.ignore_dirs]
 
 			for file in files:
-				if not file.endswith('.py'):
-					continue
+				if file.endswith('.py'):
+					fullpath = os.path.join(root, file)
+					relpath = os.path.relpath(fullpath, self.path)
+					self.filter_files[fullpath] = relpath
 
-				self._executeTokenize(os.path.join(root, file))
+	def executeTokenize(self):
+		for fullpath, relpath in self.filter_files.iteritems():
+			self._executeTokenize(fullpath, relpath)
+
 		self.optimizer.endTokenize()
 
-	def _executeTokenize(self, path):
-		file = open(path)
-		self.optimizer.executeTokenize(path, file.readline)
+	def _executeTokenize(self, path, relpath):
+		self.file = open(path)
+		self.optimizer.executeTokenize(relpath, self.file.readline)
+		self.file.close()
 
-		file.seek(0)
-		tree = ast.parse(file.read())
-		self.nodes[path] = tree
+		print 'tokenizer completed, %s' % path
 
 	def executeVisit(self):
-		for path, tree in self.nodes.iteritems():
-			self.optimizer.visit(tree, path)
+		for fullpath, relpath in self.filter_files.iteritems():
+			self.file = open(fullpath)
+			tree = ast.parse(self.file.read())
+			self.optimizer.executeVisit(relpath, tree)
+			print 'vistor completed, %s' % fullpath
+
 		self.optimizer.endVisit()
 
 	def executeTransform(self):
 		modifys = {}
 
-		for path, tree in self.nodes.iteritems():
-			modify = self.optimizer.transform(tree, path)
-			if tree.dirty:
-				modifys[path] = tree
+		for fullpath, relpath in self.filter_files.iteritems():
+			self.file = open(fullpath)
+			tree = ast.parse(self.file.read())
+			modify = self.optimizer.executeTransform(relpath, tree)
+			if True or tree.dirty:
+				self.unparse(fullpath, tree)
+
+	def unparse(self, path, tree):
+		src = '\n'.join(['# -*- coding:utf-8 -*-', unparser.unparse(tree)])
+		# print src
+		open(path, 'w').write(src)

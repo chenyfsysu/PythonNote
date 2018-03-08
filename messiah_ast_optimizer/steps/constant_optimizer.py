@@ -1,19 +1,80 @@
 # -*- coding:utf-8 -*-
 
 from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+from base import utils
+
+import setting
+import ast
+
+
+Constant = ('True', 'False', 'None')
+
 
 class ConstantTokenizer(MessiahStepTokenizer):
+	def __init__(self):
+		self.inline_consts = {}
+
 	def visit_Comment(self, token, srow_scol, erow_ecol, line):
-		print '1111111111111111', token
+		if self.executing_file not in setting.CONFIG_INLINE_CONST:
+			return
+
+		if '@inline' in token:
+			self.inline_consts.setdefault(self.executing_file, [])
+			self.inline_consts[self.executing_file].append(srow_scol[0])
+
+	def dump(self):
+		return self.inline_consts
+
 
 class ConstantVisitor(MessiahStepVisitor):
-	def visit_Name(self, node):
-		print '1111111111', node
+	def __init__(self):
+		self.constants = {}
+
+	def visit_Assign(self, node):
+		if self.executing_file not in setting.INLINE_CONST_FILES:
+			return
+
+		if self.executing_file not in setting.INLINE_CONST and \
+			utils.get_lineno(node) not in self.tokenizer_data.get(self.executing_file, []):
+			return
+
+		if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+			return 
+
+		if not self.isConstant(node.value):
+			return
+
+		constant = utils.get_constant(node.value)
+		self.constants[(self.getConstName(self.executing_file), node.targets[0].id)] = constant
+
+	def isConstant(self, node):
+		if isinstance(node, (ast.Num, ast.Str)):
+			return True
+		if isinstance(node, ast.Name) and node.id in Constant:
+			return True
+
+		return False
+
+	def getConstName(self, path):
+		if path in setting.INLINE_CONST:
+			return setting.INLINE_CONST[path]
+		return setting.CONFIG_INLINE_CONST[path]
+
+	def dump(self):
+		return self.constants
 
 
 class ConstantTransformer(MessiahStepTransformer):
-	def visit_Call(self, node):
-		print 'aaaaaaaaaaaaaaaaa', node
+
+	def visit_Attribute(self, node):
+		if not isinstance(node.value, ast.Name):
+			return node
+			
+		attrid = (node.value.id, node.attr)
+		if attrid in self.visitor_data:
+			constant = self.visitor_data[attrid]
+			node = utils.new_constant(node, constant)
+			utils.set_comment(node, '%s.%s=%s' % (attrid[0], attrid[1], constant))
 		return node
 
 
@@ -21,4 +82,3 @@ class ConstantOptimizerStep(MessiahOptimizerStep):
 	__tokenizer__ = ConstantTokenizer
 	__visitor__  = ConstantVisitor
 	__transformer__ = ConstantTransformer
-

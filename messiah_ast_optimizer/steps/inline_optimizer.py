@@ -2,21 +2,18 @@
 
 from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 
+class InlineTokenizer(MessiahStepTokenizer):
+	pass
 
 
 class InlineVisitor(MessiahStepVisitor):
 	def visit_Name(self, node):
-		print '2222222222222222', node
+		pass
 
 
 class InlineTransformer(MessiahStepTransformer):
 	def visit_Name(self, node):
-		print 'bbbbbbbbbbbbbbbbbbbb', node
 		return node
-
-
-class InlineTokenizer(MessiahStepTokenizer):
-	pass
 
 
 class InlineOptimizerStep(MessiahOptimizerStep):

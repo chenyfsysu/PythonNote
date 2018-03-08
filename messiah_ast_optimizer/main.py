@@ -3,6 +3,10 @@
 from base.executor import OptimizeExecutor
 from optimize import Optimizer
 import argparse
+import sys
+
+
+sys.path.append('lib/')  
 
 
 def execute(path, ignore_dirs, ignore_files):
