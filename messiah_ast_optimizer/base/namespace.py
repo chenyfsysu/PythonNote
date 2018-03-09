@@ -7,6 +7,7 @@ from base import NodeVisitor
 
 
 class Namespace(object):
+    FunctionDef = 
     pass
 
 
