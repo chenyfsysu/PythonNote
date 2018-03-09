@@ -1,39 +1,45 @@
-class NamespaceStep(OptimizerStep):
-    def fullvisit_FunctionDef(self, node):
-        self.namespace.set(node.name, UNSET)
-        global _fndefs
-        _fndefs[node.name] = node
 
-    def fullvisit_AsyncFunctionDef(self, node):
-        self.namespace.set(node.name, UNSET)
+# -*- coding:utf-8 -*-
+
+import ast
+
+from base import NodeVisitor
+
+
+class Namespace(object):
+    pass
+
+
+class NamespaceVisitor(NodeVisitor):
+
+    def __init__(self):
+        super(NamespaceVisitor, self).__init__()
+        self.namespaces = []
+
+
+    def setNamespace(self, node, value):
+        pass
+
+    def fullvisit_FunctionDef(self, node):
+        self.enterSubNamespace(node)
 
     def fullvisit_ClassDef(self, node):
-        self.namespace.set(node.name, UNSET)
+        self.enterSubNamespace(node)
 
-    def _namespace_set(self, node, value, unset=False):
-        if value is not UNSET:
-            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
-                names = (node.id,)
-            else:
-                names = get_ast_names(node)
-                value = UNSET
-        else:
-            names = get_ast_names(node)
+    def fullvisit_DictComp(self, node):
+        self.enterSubNamespace(node)
 
-        if names is None:
-            if self.namespace.enter_unknown_state():
-                self.log(node,
-                         "enter unknown namespace state: "
-                         "don't support assignment %s",
-                         compact_dump(node))
-            return False
+    def fullvisit_ListComp(self, node):
+        self.enterSubNamespace(node)
 
-        for name in names:
-            if unset:
-                self.namespace.unset(name)
-            else:
-                self.namespace.set(name, value)
-        return True
+    def fullvisit_SetComp(self, node):
+        self.enterSubNamespace(node)
+
+    def fullvisit_GeneratorExp(self, node):
+        self.enterSubNamespace(node)
+
+    def fullvisit_Lambda(self, node):
+        self.enterSubNamespace(node)
 
     def visit_Assign(self, node):
         value = get_constant(node.value)
@@ -71,3 +77,10 @@ class NamespaceStep(OptimizerStep):
         for target in node.targets:
             if not self._namespace_set(target, UNSET, unset=True):
                 break
+
+    def enterSubNamespace(node):
+        self.namespaces.append(Namespace())
+        node = self.generalVisit(node)
+        self.namespaces.pop()
+
+        return node

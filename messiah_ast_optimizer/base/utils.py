@@ -47,4 +47,3 @@ def new_constant(node, value):
 
 def set_comment(node, comment):
 	node.__comment__ = comment
-

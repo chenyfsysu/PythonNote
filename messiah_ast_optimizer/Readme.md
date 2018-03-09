@@ -32,3 +32,15 @@
 2. 设计namespace框架
 2. 设计添加文件依赖的框架
 3. 执行transformer之前进行拓扑排序
+
+
+fatoptimier namespace实现方案
+1）fullvisit 重新设置命名空间
+2）postvisit, previsit, midvisit
+
+
+
+
+周末：
+Namespace框架
+文件依赖框架

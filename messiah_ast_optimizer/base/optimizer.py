@@ -4,6 +4,8 @@ import ast
 import tokenize
 import token
 
+from namespace import NamespaceVisitor
+
 
 def GenerateStep(cls):
 	return cls(cls.__tokenizer__(), cls.__visitor__(), cls.__transformer__())
@@ -15,6 +17,8 @@ def OptimizeStep(*stepcls):
 		tokenizer_steps = {}
 		visit_steps = {}
 		transform_steps = {}
+		self_visitors = {}
+		full_visitors = {}
 
 		for step in optimize_steps:
 			for attr, func in step._tokenizer_visitors.iteritems():
@@ -39,7 +43,7 @@ def OptimizeStep(*stepcls):
 	return _OptimizeStep
 
 
-class MessiahNodeVisitor(ast.NodeVisitor):
+class MessiahNodeVisitor(NamespaceVisitor):
 
 	def genericVisit(self, node):
 		for field, value in ast.iter_fields(node):
