@@ -8,16 +8,20 @@ class VisitorMeta(type):
         visitors = {}
         fullvisitors = {}
         for base in bases:
-            base_visitors = getattr(base, '_visitors', None)
-            base_visitors and visitors.update(base._visitors)
+            base_visitors = getattr(base, '_selfvisitors', None)
+            base_visitors and visitors.update(base._selfvisitors)
             base_fullvisitors = getattr(base, '_fullvisitors', None)
             base_fullvisitors and fullvisitors.update(base._fullvisitors)
 
         for key, func in attrs.iteritems():
             if key.startswith('visit_'):
-                visitors[key[6:]] = func
+                key = key[6:] 
+                visitors.setdefault(key, list())
+                visitors[key].append(func)
             elif key.startswith('fullvisit_'):
-                fullvisitors[key[10:]] = func
+                key = key[10:]
+                fullvisitors.setdefault(key, list())
+                fullvisitors[key].append(func)
 
         attrs['_selfvisitors'] = visitors
         attrs['_fullvisitors'] = fullvisitors

@@ -7,12 +7,12 @@ class InlineTokenizer(MessiahStepTokenizer):
 
 
 class InlineVisitor(MessiahStepVisitor):
-	def visit_Name(self, node):
-		pass
+	def visit_Name(self, node, context):
+		print node.id, context.blocks_stack
 
 
 class InlineTransformer(MessiahStepTransformer):
-	def visit_Name(self, node):
+	def visit_Name(self, node, context):
 		return node
 
 

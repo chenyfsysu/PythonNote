@@ -110,9 +110,9 @@ class MessiahOptimizerStep(object):
 		func = getattr(self.tokenizer, 'visit_%s' % key, None)
 		func and func(token, srow_scol, erow_ecol, line)
 
-	def visitCall(self, key, node):
+	def visit(self, key, node, context):
 		func = getattr(self.visitor, 'visit_%s' % key, None)
-		func and func(node)
+		func and func(node, context)   
 
 	def visitTransform(self, key, node):
 		func = getattr(self.transformer, 'visit_%s' % key, None)

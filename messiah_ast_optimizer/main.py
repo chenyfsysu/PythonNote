@@ -6,7 +6,7 @@ import argparse
 import sys
 
 
-sys.path.append('lib/')  
+sys.path.append('lib')  
 
 
 def execute(path, ignore_dirs, ignore_files):

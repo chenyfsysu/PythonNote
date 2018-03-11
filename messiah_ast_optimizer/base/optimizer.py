@@ -4,7 +4,8 @@ import ast
 import tokenize
 import token
 
-from namespace import NamespaceVisitor
+from context import Context
+from context_visitor import ContextVisitor
 
 
 def GenerateStep(cls):
@@ -43,33 +44,62 @@ def OptimizeStep(*stepcls):
 	return _OptimizeStep
 
 
-class MessiahNodeVisitor(NamespaceVisitor):
+class MessiahNodeVisitor(ContextVisitor):
 
-	def genericVisit(self, node):
+	def visit(self, node):
+		self._generalVisitor = self._genericVisit
+		self._visit(node)
+		
+	def _visit(self, node):
+		key = node.__class__.__name__
+		if key in self._fullvisitors:
+			visitors = self._fullvisitors[key]
+			for visitor in visitors:
+				visitor(self, node)
+		else:
+			ndoe = self._genericVisit(node)
+
+		if key in self._visit_steps:
+			for step in self._visit_steps[key]:
+				step.visit(key, node, self.context)
+
+		if key in self._selfvisitors:
+			for visitor in self._selfvisitors[key]:
+				visitor(self, node)
+
+	def _genericVisit(self, node):
 		for field, value in ast.iter_fields(node):
 			if isinstance(value, list):
 				for item in value:
 					if isinstance(item, ast.AST):
-						self.visit(item)
+						self._visit(item)
 			elif isinstance(value, ast.AST):
-				self.visit(value)
+				self._visit(value)
 
-	def visit(self, node):
-		key = node.__class__.__name__
-		if key in self._visit_steps:
-			return self.dispatchVisitCall(key, node)
-		else:
-			return self.genericVisit(node)
 
-	def dispatchVisitCall(self, key, node):
+	def callVisitor(self, visitor, key, node):
 		steps = self._visit_steps[key]
 		for step in steps:
 			step.visitCall(key, node)
 
 
+
 class MessiahNodeTransformer(MessiahNodeVisitor):
 
-	def generalTransform(self, node):
+	def transform(self, node):
+		namespace = Namespace()
+		self.namespaces = [namespace]
+		self._generalVisitor = self._generalTransform
+		return self._transform(node, namespace)
+
+	def _transform(self, node, namespace):
+		key = node.__class__.__name__
+		if key in self._fullvisitors:
+			return self.dispatchTransformCall(key, node)
+		else:
+			return self.generalTransform(node)
+
+	def _generalTransform(self, node):
 		for field, old_value in ast.iter_fields(node):
 			old_value = getattr(node, field, None)
 			if isinstance(old_value, list):
@@ -91,13 +121,6 @@ class MessiahNodeTransformer(MessiahNodeVisitor):
 				else:
 					setattr(node, field, new_node)
 		return node
-
-	def transform(self, node):
-		key = node.__class__.__name__
-		if key in self._transform_steps:
-			return self.dispatchTransformCall(key, node)
-		else:
-			return self.generalTransform(node)
 
 	def dispatchTransformCall(self, key, node):
 		steps = self._transform_steps[key]

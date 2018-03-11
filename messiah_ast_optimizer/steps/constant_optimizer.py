@@ -30,7 +30,7 @@ class ConstantVisitor(MessiahStepVisitor):
 	def __init__(self):
 		self.constants = {}
 
-	def visit_Assign(self, node):
+	def visit_Assign(self, node, context):
 		if self.executing_file not in setting.INLINE_CONST_FILES:
 			return
 
@@ -66,7 +66,7 @@ class ConstantVisitor(MessiahStepVisitor):
 
 class ConstantTransformer(MessiahStepTransformer):
 
-	def visit_Attribute(self, node):
+	def visit_Attribute(self, node, context):
 		if not isinstance(node.value, ast.Name):
 			return node
 			
