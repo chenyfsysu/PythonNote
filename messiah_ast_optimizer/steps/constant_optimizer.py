@@ -2,6 +2,8 @@
 
 from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 from base import utils
+from base.context import Definition
+from collections import defaultdict
 
 import setting
 import ast
@@ -12,14 +14,13 @@ Constant = ('True', 'False', 'None')
 
 class ConstantTokenizer(MessiahStepTokenizer):
 	def __init__(self):
-		self.inline_consts = {}
+		self.inline_consts = defaultdict(list)
 
 	def visit_Comment(self, token, srow_scol, erow_ecol, line):
 		if self.executing_file not in setting.CONFIG_INLINE_CONST:
 			return
 
-		if '@inline' in token:
-			self.inline_consts.setdefault(self.executing_file, [])
+		if setting.CONST_INLINE_TAG in token:
 			self.inline_consts[self.executing_file].append(srow_scol[0])
 
 	def dump(self):
@@ -67,9 +68,13 @@ class ConstantVisitor(MessiahStepVisitor):
 class ConstantTransformer(MessiahStepTransformer):
 
 	def visit_Attribute(self, node, context):
-		if not isinstance(node.value, ast.Name):
+		if not isinstance(node.value, ast.Name) or not isinstance(node.ctx, ast.Load):
 			return node
-			
+
+		var = context.getAttribute(node.value.id)
+		if not isinstance(var, (Definition.ImportType, Definition.ImportFromType)):
+			return node
+		
 		attrid = (node.value.id, node.attr)
 		if attrid in self.visitor_data:
 			constant = self.visitor_data[attrid]

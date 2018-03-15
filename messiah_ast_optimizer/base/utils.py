@@ -4,6 +4,7 @@ import os
 import ast
 import const
 import itertools
+from collections import defaultdict
 
 
 def enum(*sequential, **named):
@@ -27,7 +28,7 @@ def copy_lineno(node, new_node):
 
 def new_constant(node, value):
 	if isinstance(value, bool):
-		new_node = ast.Name(id='True' if value else 'False', ctx=Load())
+		new_node = ast.Name(id='True' if value else 'False', ctx=ast.Load())
 	elif isinstance(value, (int, float, long)):
 		new_node = ast.Num(n=value)
 	elif isinstance(value, (unicode, str)):
@@ -48,7 +49,7 @@ def get_pure_constant(node):
 		value = True if node.id == 'True' else False if node.id == 'False' else None
 	elif isinstance(node, ast.Num):
 		value = node.n
-	elif isinstance(value, ast.Str):
+	elif isinstance(node, ast.Str):
 		value = node.s  
 	else:
 		value = const.UNKNOW
@@ -80,14 +81,16 @@ def get_constant(node):
 	return value
  
 
-def get_names(node):
+def get_pure_names(node):
 	if isinstance(node, ast.Name): 
 		return node.id
 
 	if isinstance(node, ast.Tuple):
 		names = []
 		for item in node.elts:
-			item_names = get_names(item)
+			item_names = get_pure_names(item)
+			if not item_names:
+				return None
 			names.append(item_names)
 		return names
 
@@ -95,6 +98,9 @@ def get_names(node):
 def unfold_assign(names, values):
 	if not isinstance(names, (list, tuple)):
 		return {names: values}
+
+	if not isinstance(values, (list, tuple)):
+		return {}
 
 	items = {}
 	for name, value in itertools.izip(names, values):
@@ -124,10 +130,46 @@ def set_dependency(node, filename, dependency):
 	pass
 
 
+def topo_sort(verts, edges, relies=None):
+	"""
+	edges: 依赖了哪些文件
+	relies：被哪些文件依赖列表
+	"""
+	if not relies:
+		relies = defaultdict(list)
+		for v, rvs in edges.iteritems():
+			for rv in rvs:
+				relies[rv].append(v)
+	
+
+	q = [v for v in verts if v not in relies]
+	print q
+
+	sorted_lst = []
+	while q:
+		v = q.pop()
+
+		for rv in edges.get(v, []):
+			relies[rv].remove(v)
+			if not relies[rv]:
+				q.insert(0, rv)
+
+		sorted_lst.append(v)
+
+	if len(sorted_lst) != len(verts):
+		remains = [v for v in verts if v not in sorted_lst]
+		raise RuntimeError('cannot process topological sorting, recursive dependency exsits, %s' % remains)
+
+	return sorted_lst
+
+
 if __name__ == '__main__':
 	# constant
-	node = ast.parse('a, (b, c) = {1: a}, (1, 2)').body[0]
-	names = get_names(node.targets[0])
-	value = get_constant(node.value)
-	print names, value
-	print unfold_assign(names, value)
+	# node = ast.parse('a, (b, c) = {1: a}, (1, 2)').body[0]
+	# names = get_names(node.targets[0])
+	# value = get_constant(node.value)
+	# print names, value
+	# print unfold_assign(names, value)
+
+	node = ast.parse('[i for i in xrange(10) if i > 10]').body[0]
+	print node.value.generators[0].iter, node.value.generators[0].ifs

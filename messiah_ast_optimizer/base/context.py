@@ -16,6 +16,7 @@
 """
 
 import utils
+from collections import defaultdict
 
 
 class Definition(object):
@@ -77,8 +78,8 @@ class Definition(object):
 			value = utils.get_constant(node.value)
 
 			for target in node.targets:
-				names = utils.get_names(target)
-				items = utils.unfold_assign(names, value)
+				names = utils.get_pure_names(target)
+				items = utils.unfold_assign(names, value) if names else {}
 				definitions.update(items)
 
 			return definitions
@@ -104,6 +105,10 @@ class Context(object):
 
 		self.blocks_stack = []
 
+		self.file_outdegrees = defaultdict(list) # 依赖
+		self.file_indegrees = defaultdict(list) # 被依赖
+
+
 	def addDefinition(self, vars):
 		self.locals.update(vars)
 		if isinstance(self.block, Definition.ModuleType):
@@ -113,6 +118,15 @@ class Context(object):
 		self.locals[key] = value
 		if isinstance(self.block, Definition.ModuleType):
 			self.globals[key] = value
+
+	def getAttribute(self, attr, only_locals=False):
+		if attr in self.locals:
+			return self.locals[attr]
+		return self.globals.get(attr, None)
+
+	def incFileDependency(self, src, dst):
+		self.file_outdegrees[src].append(dst)
+		self.file_indegrees[dst].append(src)
 
 	@property
 	def locals(self):

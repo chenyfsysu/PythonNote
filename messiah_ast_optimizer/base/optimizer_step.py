@@ -114,6 +114,6 @@ class MessiahOptimizerStep(object):
 		func = getattr(self.visitor, 'visit_%s' % key, None)
 		func and func(node, context)   
 
-	def visitTransform(self, key, node):
+	def transform(self, key, node, context):
 		func = getattr(self.transformer, 'visit_%s' % key, None)
-		return func(node)
+		return func(node, context)

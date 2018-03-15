@@ -37,23 +37,3 @@
 fatoptimier namespace实现方案
 1）fullvisit 重新设置命名空间
 2）postvisit, previsit, midvisit
-
-
-
-
-周末：
-Namespace框架
-文件依赖框架
-
-
-
-# 2018年3月10日
-Namespace要做大！！！重新设计
-1.) namespace功能要比fatoptimizer更强
-要能获取当前命名空间是在函数还是哪里， 还是Class， 是什么函数, 函数里的namespace有什么， 获取父空间的内容
-2.） 获取当前命名空间的变量值
-
-
-# 2018年3月10日21时
-1）namespace实现上估计要参考fatoptimizer,
-2）但是希望namespace更加具体，添加更多信息如命名空间类型

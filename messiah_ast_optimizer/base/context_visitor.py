@@ -29,6 +29,13 @@ class ContextVisitor(NodeVisitor):
 
         return node
 
+    def visitClosureBlock(self, node):
+        self.context.locals_stack.append(Namespace())
+        node = self._generalVisitor(node)
+        self.context.locals_stack.pop()
+
+        return node
+
     def visitDefinition(self, node):
         self.context.addDefinition(Definition.create(node))
 
@@ -38,40 +45,48 @@ class ContextVisitor(NodeVisitor):
         return self._generalVisitor(node)
 
     def fullvisit_ClassDef(self, node):
-        self.visitDefinitionBlock(node)
+        return self.visitDefinitionBlock(node)
 
     def fullvisit_FunctionDef(self, node):
-        self.visitDefinitionBlock(node)
+        return self.visitDefinitionBlock(node)
 
     def fullvisit_DictComp(self, node):
-        self.visitDefinitionBlock(node)
+        return self.visitClosureBlock(node)
 
     def fullvisit_ListComp(self, node):
-        self.visitDefinitionBlock(node)
+        return self.visitClosureBlock(node)
 
     def fullvisit_SetComp(self, node): 
-        self.visitDefinitionBlock(node)
+        return self.visitClosureBlock(node)
 
     def fullvisit_GeneratorExp(self, node):
-        self.visitDefinitionBlock(node)
+        return self.visitClosureBlock(node)
 
     def fullvisit_Lambda(self, node):
-        self.visitDefinitionBlock(node)
+        return  self.visitClosureBlock(node)
 
     def visit_Assign(self, node):
         self.visitDefinition(node)
+        return node
 
     def visit_AugAssign(self, node):
         self.context.setDefinition(node.target, const.UNKNOW)
+        return node
 
-    def visit_For(self, node, namespace):
-        pass
+    def visit_For(self, node):
+        return node
 
     def visit_Import(self, node):
         self.visitDefinition(node)
+        return node
 
     def visit_ImportFrom(self, node):
         self.visitDefinition(node)
+        return node
 
-    def visit_Delete(self, node, namespace):
-        pass
+    def visit_Delete(self, node):
+        locals_attr = self.context.locals
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in locals_attr:
+                del locals_attr[target.id]
+        return node

@@ -8,15 +8,16 @@ import sys
 
 class MessiahUnparser(Unparser):
 	def __init__(self, tree, file=sys.stdout):
-		self._comment = ''
+		self._comment = []
 		Unparser.__init__(self, tree, file)
+
+	def write(self, text):
+		text == '\n' and self.writeComment()
+		Unparser.write(self, text)
 
 	def fill(self, text = ""):
 		"Indent a piece of text, according to the current indentation level"
-		if self._comment:
-			self.write(' # %s' % self._comment)
-
-		self._comment = ''
+		self.writeComment()
 		self.f.write("\n"+"    "*self._indent + text)
 
 	def dispatch(self, tree):
@@ -27,11 +28,20 @@ class MessiahUnparser(Unparser):
 			return
 
 		comment = getattr(tree, '__comment__', '')
-		if comment:
-			self._comment = ' '.join([self._comment, comment])
+		if comment and comment not in self._comment:
+			self._comment.append(comment)
 
 		meth = getattr(self, "_"+tree.__class__.__name__)
 		meth(tree)
+
+	def _Module(self, node):
+		Unparser._Module(self, node)
+		self.writeComment()
+
+	def writeComment(self):
+		if self._comment:
+			self.write('  #%s' % ' '.join(self._comment))
+		self._comment = []
 
 
 def unparse(tree):

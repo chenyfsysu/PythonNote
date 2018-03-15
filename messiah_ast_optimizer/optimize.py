@@ -4,9 +4,10 @@
 from base.optimizer import MessiahOptimizer, OptimizeStep
 from steps.constant_optimizer import ConstantOptimizerStep
 from steps.inline_optimizer import InlineOptimizerStep
+from steps.component_optimizer import ComponentOptimizerStep
 
 
-@OptimizeStep(ConstantOptimizerStep, InlineOptimizerStep)
+@OptimizeStep(ConstantOptimizerStep, InlineOptimizerStep, ComponentOptimizerStep)
 class Optimizer(MessiahOptimizer):
 	pass
 

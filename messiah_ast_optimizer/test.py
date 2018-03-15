@@ -1,6 +1,8 @@
-a = 100
-
 class A(object):
-	def func(self):
-		b = 2000
-c = 3000
+	def inner(self):
+		pass
+
+def func():
+	pass
+
+B = 1000

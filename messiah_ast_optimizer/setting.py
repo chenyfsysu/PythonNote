@@ -3,6 +3,14 @@
 import os
 
 
+ROOT = ''
+CLEINT_PATHS = [
+]
+
+SERVER_PATHS = [
+]
+
+
 # 直接inline的Constant
 INLINE_CONST = {
 	os.path.normpath('common/const.py'): 'const',
@@ -13,5 +21,5 @@ INLINE_CONST = {
 CONFIG_INLINE_CONST = {
 
 }
-CONFIG_TAG = '@inline'
+CONST_INLINE_TAG = '@inline'
 INLINE_CONST_FILES = INLINE_CONST.keys() + CONFIG_INLINE_CONST.keys()
