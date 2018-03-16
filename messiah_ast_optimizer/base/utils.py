@@ -26,17 +26,40 @@ def copy_lineno(node, new_node):
 	return new_node
 
 
-def new_constant(node, value):
+def new_assignment(name, value):
+	name = ast.Name(id=name)
+	value = new_constant(value)
+
+
+def new_constant(value, node=None):
 	if isinstance(value, bool):
 		new_node = ast.Name(id='True' if value else 'False', ctx=ast.Load())
-	elif isinstance(value, (int, float, long)):
+	elif isinstance(value, (int, float, long, complex)):
 		new_node = ast.Num(n=value)
 	elif isinstance(value, (unicode, str)):
 		new_node = ast.Str(s=value)
+	elif isinstance(value, (tuple, list)):
+		cls = ast.Tuple if isinstance(value, tuple) else ast.List
+		elts = [new_constant(elt, node) for elt in value]
+		new_node = cls(elts=elts, ctx=ast.Load)
+	elif isinstance(value, set):
+		elts = [new_constant(elt, node) for elt in value]
+		new_node = ast.Set(elts=elts)
+	elif isinstance(value, dict):
+		keys = [new_constant(k, node) for k in value.keys()]
+		values = [new_constant(v, node) for v in value.values()]
+		new_node = ast.Dict(keys=keys, values=values)
+	elif isinstance(value, frozenset):
+		elts = [new_constant(elt, node) for elt in value]
+		arg = ast.Tuple(elts=elts, ctx=ast.Load())
+		func = ast.Name(id='frozenset', ctx=ast.Load())
+		new_node = ast.Call(func=func, args=[arg], keywords=[], starargs=None, kwargs=None)
+	elif value is None:
+		new_node = ast.Name(id='None', ctx=ast.Load())
 	else:
 		raise TypeError("unknown type: %s" % type(value).__name__)
 
-	copy_lineno(node, new_node)
+	node and copy_lineno(node, new_node)
 	return new_node
 
 

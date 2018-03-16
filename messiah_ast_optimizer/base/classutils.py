@@ -2,6 +2,7 @@
 
 import ast
 import astinspect
+import utils
 
 
 def predicate_entity_property(node):
@@ -12,26 +13,9 @@ def predicate_class_attr(node):
 	return isinstance(node, ast.Assign)
 
 
-def merge_component(cls, component):
-	body = []
-	for comp in component:
-		body.extend(astinspect.getclassbodies(comp, predicate_entity_property))
-		body.extend(astinspect.getclassbodies(comp, predicate_class_attr))
-		body.extend(astinspect.getmembers(component, astinspect.ismethod))
-	body.extend(cls.body)
-	cls.body = body
-
-	return cls
-
-
 def _fold_property(props):
-	pass
-
-
-
-def fold_properties(props):
-	property_all=property_flag=property_delay = []
-
+	print props
+	return 'coco', 0, 0, 0
 	for prop in props:
 		name, all, flag, delay = _fold_property(prop)
 		property_all[name] = all
@@ -41,35 +25,51 @@ def fold_properties(props):
 	return property_all, property_flag, property_delay
 
 
+def split_cls_body(cls):
+	prop = astinspect.getclassbodies(cls, predicate_entity_property)
+	attr = astinspect.getclassbodies(cls, predicate_class_attr)
+	method = astinspect.getmembers(cls, astinspect.ismethod)
+
+	return prop, attr, method
+
+
+def merge_component(host, component):
+	attrs, methods, properties, decorator_list = [], {}, [], []
+
+	component.insert(0, [host])
+	for comp in component:
+		prop, attr, method = split_cls_body(comp)
+
+		properties.append(prop)
+		attrs.append(attr)
+		methods.update(method)
+		decorator_list.extend([deco for cls in comp for deco in cls.decorator_list])
+
+	body = properties + attrs + methods.values()
+
+	# property_all, property_flag, property_delay = fold_properties(properties) # 离线生成Property
+
+	host.body = body
+	host.decorator_list = decorator_list
+
+	return host
+
+
+
 if __name__ == '__main__':
 	src = """
 class A(object):
-	name = 'coco'
-	Property('coco')
-	1 + 1
+	A = 1
+	def func():
+		pass
 
-class B(A):
+class B(object):
 	B = 2
-	def func(object):
-		pass
-
-	def func2(object):
-		pass
-
-	def inner(object):
-		pass
-
-	@property
-	def aaa(self):
-		pass
 """
 
 	import astunparse
-	node = ast.parse(src)
-	# print getmembers([node.body[0], node.body[1]], ismethod)
-	# print getbodies([node.body[0], node.body[1]], ismethod)
+	node = ast.parse(open('../test.py').read())
 	cls1 = node.body[0]
 	cls2 = node.body[1]
 	merge_component(cls2, [[cls1],])
-	print cls2.body
-	print astunparse.unparse(node)
+	print astunparse.unparse(cls2)

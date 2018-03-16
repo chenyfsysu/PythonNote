@@ -19,12 +19,12 @@ class ContextVisitor(NodeVisitor):
         context = self.context
         definitions = Definition.create(node)
         context.addDefinition(definitions)
-        context.blocks_stack.append(definitions.values()[0])
+        context.frames.append(definitions.values()[0])
         context.locals_stack.append(Namespace())
         
         node = self._generalVisitor(node)
 
-        context.blocks_stack.pop()
+        context.frames.pop()
         context.locals_stack.pop()
 
         return node
@@ -40,7 +40,7 @@ class ContextVisitor(NodeVisitor):
         self.context.addDefinition(Definition.create(node))
 
     def fullvisit_Module(self, node):
-        self.context.blocks_stack.append(Definition.create(node).values()[0])
+        self.context.frames.append(Definition.create(node).values()[0])
         self.context.locals_stack.append(Namespace())
         return self._generalVisitor(node)
 

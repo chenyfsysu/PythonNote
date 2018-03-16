@@ -103,7 +103,7 @@ class Context(object):
 		self.locals_stack = []
 		self.globals = Namespace()
 
-		self.blocks_stack = []
+		self.frames = []
 
 		self.file_outdegrees = defaultdict(list) # 依赖
 		self.file_indegrees = defaultdict(list) # 被依赖
@@ -111,12 +111,12 @@ class Context(object):
 
 	def addDefinition(self, vars):
 		self.locals.update(vars)
-		if isinstance(self.block, Definition.ModuleType):
+		if isinstance(self.frame, Definition.ModuleType):
 			self.globals.update(vars)
 
 	def setDefinition(self, key, value):
 		self.locals[key] = value
-		if isinstance(self.block, Definition.ModuleType):
+		if isinstance(self.frame, Definition.ModuleType):
 			self.globals[key] = value
 
 	def getAttribute(self, attr, only_locals=False):
@@ -133,5 +133,5 @@ class Context(object):
 		return self.locals_stack[-1]
 
 	@property
-	def block(self):
-		return self.blocks_stack[-1]
+	def frame(self):
+		return self.frames[-1]

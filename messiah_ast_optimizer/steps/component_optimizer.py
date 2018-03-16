@@ -1,9 +1,12 @@
 # -*- coding:utf-8 -*-
 """
-1) classutils提供合并两个class的功能
-2) 添加文件依赖，保证优化不会覆盖
-3）插入Import的功能
+1)合并的class拥有装饰器
+@sutils.crosserver_forbidden_class
+class AvatarMember(iPokemonComponent):
+2） hotfix怎么办
+3） Property这种有很多import回来的值
 """
+
 from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 
 

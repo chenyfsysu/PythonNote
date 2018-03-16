@@ -1,4 +1,7 @@
 # -*- coding:utf-8 -*-
+"""
+1) 2018.3.6: 需要提供一个获取import的文件路径的功能
+"""
 
 import os
 import ast

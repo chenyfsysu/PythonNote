@@ -78,7 +78,7 @@ class ConstantTransformer(MessiahStepTransformer):
 		attrid = (node.value.id, node.attr)
 		if attrid in self.visitor_data:
 			constant = self.visitor_data[attrid]
-			node = utils.new_constant(node, constant)
+			node = utils.new_constant(constant, node)
 			utils.set_comment(node, '%s.%s=%s' % (attrid[0], attrid[1], constant))
 		return node
 
