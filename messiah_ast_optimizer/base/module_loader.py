@@ -4,6 +4,7 @@
 和Python2的源码Import实现一致，根据import内容返回对应的AST Node
 """
 
+import os
 from finder import AttributeFinder
 
 
@@ -17,16 +18,21 @@ class RoutinePath(object):
 
 class Module(object):
 	"""通过.可获取"""
-	def __init__(self, name, file=None, path=None):
+	def __init__(self, name, file, path=False, node=None):
 		super(Module, self).__init__()
-		self.__name__ = name
-		self.__file__ = file
-		self.__path__ = path
+		self.name = name
+		self.file = file
+		self.path = path
 
 		self.node = node
 		self.locals = {}
 
+	def getParent(self):
+		return os.path.dirname(self.file)
+
 	def _loadLocals(self):
+		if not self.node:
+			return
 		self.locals = {}
 
 	def load(self, name):
@@ -49,105 +55,54 @@ class ModuleLoader(object):
 		try:
 			pass
 		except ImportError:
-			raise
+			print '111'
 		else:
 			pass
 		finally:
 			pass
 
-	def getParent(self):
-		pass
+	def _loadModuleLevel(self, name, caller, level=-1):
+		parent = self._loadParent(caller, level=level)
 
-	def loadNext(self):
-		pass
-
-	def ensureFromlist(self):
-		pass
+		# names = name.split('.')
+		# head = self._loadNext(name, caller, parent)
 
 
-
-
-
-
-
-
-class ImportFinder(object):
-	"""模拟import, 返回对应的astNode"""
-
-	class Module(object):
-		def __init__(self, name, path, type, node=None):
-			self.name = name
-			self.path = path
-			self.type = type
-			self.node = None
-
-		def __repr__(self):
-			return 'Module(name: %s, path: %s' % (self.name, self.path)
-
-	def __init__(self, root, path):
-		super(ImportFinder, self).__init__()
-		self.root = root
-		self.path = [root]
-		
-		path and self.path.extend(path)
-
-	def findImportNode(self, module, pdir):
-		caller = ImportFinder.Module('', pdir, imp.PY_SOURCE)
-		return self._loadImport(module, caller)
-
-	def findImportFromNode(self, module, fromlist, level, pdir):
-		if not isinstance(fromlist, (list, tuple)):
-			fromlist = [fromlist]
-
-		caller = ImportFinder.Module('', pdir, imp.PY_SOURCE)
-		return self._loadImport(module, caller, fromlist=fromlist, level=level)
-
-	def _loadImport(self, name, caller, fromlist=None, level=-1):
-		find_paths = ["/".join(caller.path.split("/")[:-level])] if level > 0 else [caller.path] if level == 0 else None
-		try:
-			split_path = name.split('.')
-			pkg, tail = split_path[0], split_path[1:]
-			module = self._findImport(pkg, find_paths)
-
-			if tail:
-				pkg, find_paths = tail[-1], [os.path.join(module.path, *tail[:-1])]
-				module = self._findImport(pkg, find_paths)
-		except ImportError as e:
-			print 'ImportError: %s' % e
+	def _loadParent(self, caller, level):
+		if not caller or level == 0:
 			return None
+
+		pname, ppath = caller.name, caller.getParent()
+		if level >= 1:
+			if caller.path:
+				level -= 1
+			if level:
+				pname = '.'.join(pname.split('.')[:-level])
+				ppath = os.path.abspath('%s%s%s'(pname, os.path.sep, '.' * level))
 		else:
-			node = self._getAstNode(module)
-			if fromlist:
-				return self._enusreFromlist(node, module, fromlist)
-			return {name: node}
+			pname = pname if caller.path else pname[:pname.rfind('.')] if '.' in pname else None
 
-	def _findImport(self, name, find_paths=None):
-		if not find_paths:
-			find_paths = self.path
+		if not pname:
+			return None
 
-		_, path, (_, _, type) = imp.find_module(name, find_paths)
-		return ImportFinder.Module(name, path, type)
+		if pname in self.modules:
+			return self.modules[pname]
 
-	def _getAstNode(self, module):
-		if module.type == imp.PY_SOURCE:
-			return ast.parse(open(module.path).read())
-		elif module.type == imp.PKG_DIRECTORY:
-			module = self._findImport('__init__', [module.path])
-			return ast.parse(open(module.path).read())
+		return imp._loadModule(pname, '__init__', [ppath], package=True)
 
-		return None
+	def _loadNext(self):
+		pass
 
-	def _enusreFromlist(self, node, module, fromlist):
-		importall = '*' in fromlist
-		finder = AttributeFinder(fromlist, importall)
-		result = finder.find(node)
+	def _loadModule(self, name, fullname, path=None, package=False):
+		path = path or self.path
+		fp, pathname, desc = imp.find_module(name, path)
+		_, _, typ = desc
 
-		if module.type == imp.PKG_DIRECTORY:
-			remains = [i for i in fromlist if i not in result]
-			if not importall and remains:
-				for remain in remains:
-					remain_module = self._loadImport(remain, module, level=0)
-					if remain_module and remain in remain_module:
-						result[remain] = remain_module[remain]
-		
-		return result
+		if typ == imp.PKG_DIRECTORY:
+			pathname, mod = self._loadPackage(pathname)
+		elif typ == imp.imp.PY_SOURCE:
+			pass
+
+
+	def _loadPackage(self, fullname, path):
+		pkg = imp.find_module('__init__', [path])
