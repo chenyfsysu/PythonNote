@@ -3,12 +3,22 @@
 import os
 
 
-ROOT = ''
 CLEINT_PATHS = [
+	'client'
+	'common'
 ]
 
 SERVER_PATHS = [
+	'server',
+	'common'
 ]
+
+
+def get_loader_path(self, root):
+	if root.startswith('server'):
+		return SERVER_PATHS
+
+	return CLEINT_PATHS
 
 
 # 直接inline的Constant

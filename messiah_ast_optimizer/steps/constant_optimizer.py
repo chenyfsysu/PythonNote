@@ -1,9 +1,10 @@
 # -*- coding:utf-8 -*-
 
-from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
-from base import utils
-from base.context import Definition
+from core.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+from core.objects import LazyImportObject
 from collections import defaultdict
+from core import utils
+
 
 import setting
 import ast
@@ -17,11 +18,11 @@ class ConstantTokenizer(MessiahStepTokenizer):
 		self.inline_consts = defaultdict(list)
 
 	def visit_Comment(self, token, srow_scol, erow_ecol, line):
-		if self.executing_file not in setting.CONFIG_INLINE_CONST:
+		if self._file not in setting.CONFIG_INLINE_CONST:
 			return
 
 		if setting.CONST_INLINE_TAG in token:
-			self.inline_consts[self.executing_file].append(srow_scol[0])
+			self.inline_consts[self._file].append(srow_scol[0])
 
 	def dump(self):
 		return self.inline_consts
@@ -32,11 +33,11 @@ class ConstantVisitor(MessiahStepVisitor):
 		self.constants = {}
 
 	def visit_Assign(self, node, context):
-		if self.executing_file not in setting.INLINE_CONST_FILES:
+		if self._file not in setting.INLINE_CONST_FILES:
 			return
 
-		if self.executing_file not in setting.INLINE_CONST and \
-			utils.get_lineno(node) not in self.tokenizer_data.get(self.executing_file, []):
+		if self._file not in setting.INLINE_CONST and \
+			utils.get_lineno(node) not in self.tokenizer_data.get(self._file, []):
 			return
 
 		if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
@@ -46,7 +47,7 @@ class ConstantVisitor(MessiahStepVisitor):
 			return
 
 		constant = utils.get_constant(node.value)
-		self.constants[(self.getConstName(self.executing_file), node.targets[0].id)] = constant
+		self.constants[(self.getConstName(self._file), node.targets[0].id)] = constant
 
 	def isConstant(self, node):
 		if isinstance(node, (ast.Num, ast.Str)):
@@ -71,8 +72,8 @@ class ConstantTransformer(MessiahStepTransformer):
 		if not isinstance(node.value, ast.Name) or not isinstance(node.ctx, ast.Load):
 			return node
 
-		var = context.getAttribute(node.value.id)
-		if not isinstance(var, (Definition.ImportType, Definition.ImportFromType)):
+		var = context.load(node.value.id)
+		if not isinstance(var, LazyImportObject):
 			return node
 		
 		attrid = (node.value.id, node.attr)

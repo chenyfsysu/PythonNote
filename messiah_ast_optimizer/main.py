@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from base.executor import OptimizeExecutor
+from core.executor import OptimizeExecutor
 from optimize import Optimizer
 import argparse
 import sys

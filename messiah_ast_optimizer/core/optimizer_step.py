@@ -21,10 +21,10 @@ class MessiahBaseVisitor(object):
 
 	def __init__(self):
 		super(MessiahBaseVisitor, self).__init__()
-		self.executing_file = ''
+		self._file = ''
 
-	def setupExecuting(self, file):
-		self.executing_file = file
+	def onStart(self, file):
+		self._file = file
 
 	def load(self):
 		pass

@@ -66,6 +66,8 @@ class MessiahNodeVisitor(ContextVisitor):
 			for visitor in self._selfvisitors[key]:
 				visitor(self, node)
 
+		return node
+
 	def _genericVisit(self, node):
 		for field, value in ast.iter_fields(node):
 			if isinstance(value, list):
@@ -74,6 +76,8 @@ class MessiahNodeVisitor(ContextVisitor):
 						self._visit(item)
 			elif isinstance(value, ast.AST):
 				self._visit(value)
+
+		return node
 
 
 	def callVisitor(self, visitor, key, node):
@@ -168,18 +172,18 @@ class MessiahOptimizer(MessiahNodeTransformer, MessiahTokenizer):
 
 	def executeTokenize(self, path, readline):
 		for step in self._optimize_steps:
-			step.tokenizer.setupExecuting(path)
+			step.tokenizer.onStart(path)
 
 		self.tokenize(readline)
 
 	def executeVisit(self, path, tree):
 		for step in self._optimize_steps:
-			step.visitor.setupExecuting(path)
+			step.visitor.onStart(path)
 		self.visit(tree)
 
 	def executeTransform(self, path, tree):
 		for step in self._optimize_steps:
-			step.transformer.setupExecuting(path)
+			step.transformer.onStart(path)
 		return self.transform(tree)
 
 	def endTokenize(self):

@@ -16,6 +16,10 @@ def compare_path(src, dst):
 	return os.path.normpath(src) == os.path.normpath(dst)
 
 
+def get_parent_dir(dir, level):
+	return os.path.abspath('%s%s' % (dir, '%s%s' % (os.path.sep, '..') * level))
+
+
 def get_lineno(node):
 	return getattr(node, 'lineno', -1)
 
@@ -118,21 +122,18 @@ def get_pure_names(node):
 		return names
 
 
-def unfold_assign(names, values):
-	if not isinstance(names, (list, tuple)):
-		return {names: values}
-
-	if not isinstance(values, (list, tuple)):
-		return {}
-
-	items = {}
-	for name, value in itertools.izip(names, values):
-		if isinstance(name, list):
-			_items = unfold_assign(name, value)
-			items.update(_items)
-		else:
-			items[name] = value
-	return items
+def unpack_sequence(target, value):
+	try:
+		items = []
+		for i, _target in enumerate(target.elts):
+			if isinstance(_target, (ast.Tuple, ast.List)):
+				_items = unpack_sequence(_target, value.elts[i] if value else None)
+				items.extend(_items)
+			elif isinstance(_target, ast.Name):
+				items.append((_target, value.elts[i] if value else None))
+		return items
+	except:
+		return unpack_sequence(target, None)
 
 
 def fold_binop(op, src, dst):
@@ -187,12 +188,7 @@ def topo_sort(verts, edges, relies=None):
 
 
 if __name__ == '__main__':
-	# constant
-	# node = ast.parse('a, (b, c) = {1: a}, (1, 2)').body[0]
-	# names = get_names(node.targets[0])
-	# value = get_constant(node.value)
-	# print names, value
-	# print unfold_assign(names, value)
-
-	node = ast.parse('[i for i in xrange(10) if i > 10]').body[0]
-	print node.value.generators[0].iter, node.value.generators[0].ifs
+	node = ast.parse('a, (b, (c, d)) = 1, (2, (3, (4, 5)))').body[0]
+	node = ast.parse('a, (b, (c, d)) = 1, (2, self.test())').body[0]
+	node = ast.parse('self.name = 1, 3').body[0]
+	print unpack_sequence(node.targets[0], node.value)

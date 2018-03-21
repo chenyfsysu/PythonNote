@@ -7,7 +7,7 @@ class AvatarMember(iPokemonComponent):
 3） Property这种有很多import回来的值
 """
 
-from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+from core.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 
 
 class ComponentTokenizer(MessiahStepTokenizer):
@@ -25,6 +25,10 @@ class ComponentTransformer(MessiahStepTransformer):
 	def __init__(self):
 		super(ComponentTransformer, self).__init__()
 		self.merge_cls = {}
+
+	def onStart(self, file):
+		super(ComponentTransformer, self).onStart(file)
+		self.loader = None
 
 	def visit_ClassDef(self, node, context):
 		if node.decorator_list:

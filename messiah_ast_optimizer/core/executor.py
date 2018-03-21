@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 from utils import enum, compare_path
-from file import LazyFile
 
 import os
 import ast
@@ -76,6 +75,7 @@ class OptimizeExecutor(object):
 			modify = self.optimizer.executeTransform(relpath, tree)
 			if True or tree.dirty:
 				self.unparse(fullpath, tree)
+			print 'transformer completed, %s' % fullpath
 
 	def unparse(self, path, tree):
 		src = '\n'.join(['# -*- coding:utf-8 -*-', unparser.unparse(tree)])

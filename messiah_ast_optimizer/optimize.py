@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 
-from base.optimizer import MessiahOptimizer, OptimizeStep
+from core.optimizer import MessiahOptimizer, OptimizeStep
 from steps.constant_optimizer import ConstantOptimizerStep
 from steps.inline_optimizer import InlineOptimizerStep
 from steps.component_optimizer import ComponentOptimizerStep

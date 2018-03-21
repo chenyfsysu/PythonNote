@@ -1,8 +1,29 @@
 # -*- coding:utf-8 -*-
 
 import ast
-import astinspect
 import utils
+
+from finder import AttributeFinder
+from base import Definition
+
+
+def ismethod(node):
+	return isinstance(node, ast.FunctionDef)
+
+
+def getmembers(mro, predicate=None):
+	result = {}
+	finder = AttributeFinder(findall=True, predicate=predicate)
+	for cls in mro:
+		for key, value in finder.find(cls).iteritems():
+			if key not in result:
+				result[key] = value.node
+
+	return result
+
+
+def getclassbodies(mro, predicate=None):
+	return [node for cls in mro for node in cls.body if not predicate or predicate(node)]
 
 
 def predicate_entity_property(node):
@@ -14,7 +35,6 @@ def predicate_class_attr(node):
 
 
 def _fold_property(props):
-	print props
 	return 'coco', 0, 0, 0
 	for prop in props:
 		name, all, flag, delay = _fold_property(prop)
@@ -26,9 +46,9 @@ def _fold_property(props):
 
 
 def split_cls_body(cls):
-	prop = astinspect.getclassbodies(cls, predicate_entity_property)
-	attr = astinspect.getclassbodies(cls, predicate_class_attr)
-	method = astinspect.getmembers(cls, astinspect.ismethod)
+	prop = getclassbodies(cls, predicate_entity_property)
+	attr = getclassbodies(cls, predicate_class_attr)
+	method = getmembers(cls, ismethod)
 
 	return prop, attr, method
 
@@ -58,18 +78,13 @@ def merge_component(host, component):
 
 if __name__ == '__main__':
 	src = """
-class A(object):
-	A = 1
-	def func():
-		pass
-
-class B(object):
-	B = 2
+if True:
+	A = 100
+else:
+	A = 10
 """
 
 	import astunparse
-	node = ast.parse(open('../test.py').read())
-	cls1 = node.body[0]
-	cls2 = node.body[1]
-	merge_component(cls2, [[cls1],])
-	print astunparse.unparse(cls2)
+	node = ast.parse(src)
+	for body in node.body:
+		print body

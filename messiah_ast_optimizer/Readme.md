@@ -37,3 +37,9 @@
 fatoptimier namespace实现方案
 1）fullvisit 重新设置命名空间
 2）postvisit, previsit, midvisit
+
+
+
+2018.3.19
+合并Componennt：能合并则合并，不能则抛错不处理
+hotfix加工具

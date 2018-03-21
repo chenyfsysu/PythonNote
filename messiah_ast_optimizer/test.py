@@ -1,4 +1,9 @@
-from setting import ROOT
-import sys
-print sys.modules['setting'].CONST_INLINE_TAG
-print dir()
+class A(object):
+	def inner(self):
+		pass
+
+def func():
+	pass
+
+B = 1000
+del B

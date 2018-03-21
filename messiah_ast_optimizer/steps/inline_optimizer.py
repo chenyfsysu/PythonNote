@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from base.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+from core.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 
 class InlineTokenizer(MessiahStepTokenizer):
 	pass
