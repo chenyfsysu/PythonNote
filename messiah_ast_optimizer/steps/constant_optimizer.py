@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from core.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+from core.base import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 from core.objects import LazyImportObject
 from collections import defaultdict
 from core import utils
@@ -14,7 +14,9 @@ Constant = ('True', 'False', 'None')
 
 
 class ConstantTokenizer(MessiahStepTokenizer):
-	def __init__(self):
+	def __init__(self, optimizer):
+		super(ConstantTokenizer, self).__init__(optimizer)
+
 		self.inline_consts = defaultdict(list)
 
 	def visit_Comment(self, token, srow_scol, erow_ecol, line):
@@ -84,7 +86,4 @@ class ConstantTransformer(MessiahStepTransformer):
 		return node
 
 
-class ConstantOptimizerStep(MessiahOptimizerStep):
-	__tokenizer__ = ConstantTokenizer
-	__visitor__  = ConstantVisitor
-	__transformer__ = ConstantTransformer
+ConstantOptimizeStep = MessiahOptimizerStep(tokenizer=ConstantTokenizer, visitor=ConstantVisitor, transformer=ConstantTransformer)

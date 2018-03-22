@@ -43,3 +43,29 @@ fatoptimier namespace实现方案
 2018.3.19
 合并Componennt：能合并则合并，不能则抛错不处理
 hotfix加工具
+
+1) pylint
+2) astroid
+
+
+# class Optimizer(object):
+# 	def __init__(self):
+# 		self.tokenize_data = {}
+# 		self.visitor_data = {}
+
+
+# class Tokenizer(object):
+# 	def __init__(self):
+# 		pass
+
+# 	def enter(self):
+# 		"""執行tokenize"""
+# 		pass
+
+# 	def exit(self):
+# 		"""退出tokenize"""
+# 		pass
+
+
+# 問題在於@Optimize在Meta之後！！！
+#  

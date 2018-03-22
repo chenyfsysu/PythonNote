@@ -11,25 +11,50 @@ class VisitorMeta(type):
 		visitors = defaultdict(list)
 		fullvisitors = defaultdict(list)
 		for base in bases:
-			base_visitors = getattr(base, '_selfvisitors', None)
-			base_visitors and visitors.update(base._selfvisitors)
+			base_visitors = getattr(base, '_visitors', None)
+			base_visitors and visitors.update(base._visitors)
 			base_fullvisitors = getattr(base, '_fullvisitors', None)
 			base_fullvisitors and fullvisitors.update(base._fullvisitors)
 
 		for key, func in attrs.iteritems():
 			if key.startswith('visit_'):
-				key = key[6:] 
-				visitors[key].append(func)
+				visitors[key].append(key)
 			elif key.startswith('fullvisit_'):
-				key = key[10:]
-				fullvisitors[key].append(func)
+				fullvisitors[key].append(key)
 
-		attrs['_selfvisitors'] = visitors
+		attrs['_visitors'] = visitors
 		attrs['_fullvisitors'] = fullvisitors
 
 		return super(VisitorMeta, mcls).__new__(mcls, name, bases, attrs)
 
 
-class NodeVisitor(ast.NodeVisitor):
+class IVisitor(object):
 	__metaclass__ = VisitorMeta
 
+	def __init__(self, optimizer=None):
+		self.optimizer = optimizer
+
+
+class NodeVisitor(IVisitor, ast.NodeVisitor):
+	pass
+
+
+class MessiahStepTokenizer(IVisitor):
+	pass
+
+
+class MessiahStepVisitor(NodeVisitor):
+	pass
+
+
+
+class MessiahStepTransformer(NodeVisitor):
+	pass
+
+
+class MessiahOptimizerStep(object):
+
+	def __init__(self, tokenizer=None, visitor=None, transformer=None):
+		self.tokenizer = tokenizer
+		self.visitor = visitor
+		self.transformer = transformer

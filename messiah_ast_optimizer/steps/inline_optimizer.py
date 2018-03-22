@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from core.optimizer_step import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
+from core.base import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 
 class InlineTokenizer(MessiahStepTokenizer):
 	pass
@@ -16,7 +16,4 @@ class InlineTransformer(MessiahStepTransformer):
 		return node
 
 
-class InlineOptimizerStep(MessiahOptimizerStep):
-	__tokenizer__ = InlineTokenizer
-	__visitor__  = InlineVisitor
-	__transformer__ = InlineTransformer
+InlineOptimizeStep = MessiahOptimizerStep(tokenizer=InlineOptimizerStep, visitor=InlineVisitor, transformer=InlineTransformer)

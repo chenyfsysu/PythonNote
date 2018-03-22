@@ -1,195 +1,118 @@
 # -*- coding:utf-8 -*-
 
-import ast
-import tokenize
-import token
-
-from collections import defaultdict
-from context import Context
-from context_visitor import ContextVisitor
-
-
-def GenerateStep(cls):
-	return cls(cls.__tokenizer__(), cls.__visitor__(), cls.__transformer__())
+from walker import TokenizeWalker, VisitWalker, TransformWalker
 
 
 def OptimizeStep(*stepcls):
 	def _OptimizeStep(kclass):
-		optimize_steps = [GenerateStep(cls) for cls in stepcls]
-		tokenizer_steps = defaultdict(list)
-		visit_steps = defaultdict(list)
-		transform_steps = defaultdict(list)
-		self_visitors = {}
-		full_visitors = {}
+		tokenizer_visitors = []
+		visit_visitors = []
+		transform_visitors = []
 
-		for step in optimize_steps:
-			for attr, func in step._tokenizer_visitors.iteritems():
-				tokenizer_steps[attr].append(step)
+		for step in stepcls:
+			step.tokenizer and tokenizer_visitors.append(step.tokenizer)
+			step.visitor and visit_visitors.append(step.visitor)
+			step.transformer and transform_visitors.append(step.transformer)
 
-			for attr, func in step._visit_visitors.iteritems():
-				visit_steps[attr].append(step)
-
-			for attr, func in step._transform_visitors.iteritems():
-				transform_steps[attr].append(step)
-
-		kclass._tokenizer_steps = tokenizer_steps
-		kclass._visit_steps = visit_steps
-		kclass._transform_steps = transform_steps
-		kclass._optimize_steps = optimize_steps
+		kclass._tokenizer_visitors = tokenizer_visitors
+		kclass._visit_visitors = visit_visitors
+		kclass._transform_visitors = transformer
 
 		return kclass
 
 	return _OptimizeStep
 
 
-class MessiahNodeVisitor(ContextVisitor):
+class MessiahOptimizer(object):
+	def __init__(self):
+		self.tokenize_walker = TokenizeWalker()
+		self.visit_walker = VisitWalker()
+		self.transform_walker = TransformWalker()
 
-	def visit(self, node):
-		self._generalVisitor = self._genericVisit
-		self.context = Context()
-		self._visit(node)
-		
-	def _visit(self, node):
-		key = node.__class__.__name__
-		if key in self._fullvisitors:
-			visitors = self._fullvisitors[key]
-			for visitor in visitors:
-				visitor(self, node)
-		else:
-			self._genericVisit(node)
+		self.tokenizers = []
+		self.visitors = []
+		self.transformers = []
 
-		if key in self._visit_steps:
-			for step in self._visit_steps[key]:
-				step.visit(key, node, self.context)
+		self.optimize_data = {}
 
-		if key in self._selfvisitors:
-			for visitor in self._selfvisitors[key]:
-				visitor(self, node)
+	def optimize(self):
+		self.activate()
 
-		return node
+	def activate(self):
+		self.tokenizers = [cls(self) for cls in self._tokenizer_visitors]
+		self.tokenize_walker.activate(self.tokenizers)
 
-	def _genericVisit(self, node):
-		for field, value in ast.iter_fields(node):
-			if isinstance(value, list):
-				for item in value:
-					if isinstance(item, ast.AST):
-						self._visit(item)
-			elif isinstance(value, ast.AST):
-				self._visit(value)
+		self.visitors = [cls(self) for cls in self._visit_visitors]
+		self.visit_walker.activate(self.visitors)
 
-		return node
+		self.transformers = [cls(self) for cls in self._transform_visitors]
+		self.transform_walker.activate(self.transformers)
 
 
-	def callVisitor(self, visitor, key, node):
-		steps = self._visit_steps[key]
-		for step in steps:
-			step.visitCall(key, node)
+	def filterOptimizeFiles(self):
+		pass
+
+	def processTokenize(self):
+		pass
+
+	def processVisit(self):
+		pass
+
+	def processTransform(self):
+		pass
+
+	def storeData(self, visitor, data):
+		self.optimize_data[visitor.__name__] = data
+
+	def loadData(self, visitor, data):
+		return self.optimize_data.get(visitor.__name__, None)
 
 
+	def filterExecuteFiles(self):
+		self.filter_files = {}
+		for root, dirs, files in scandir.walk(self.path, topdown=True):
+			dirs[:] = [d for d in dirs if os.path.normpath(os.path.join(root, d)) not in self.ignore_dirs]
 
-class MessiahNodeTransformer(MessiahNodeVisitor):
+			for file in files:
+				if file.endswith('.py'):
+					fullpath = os.path.join(root, file)
+					relpath = os.path.relpath(fullpath, self.path)
+					self.filter_files[fullpath] = relpath
 
-	def transform(self, node):
-		self._generalVisitor = self._generalTransform
-		self.context = Context()
-		return self._transform(node)
+	def executeTokenize(self):
+		for fullpath, relpath in self.filter_files.iteritems():
+			self._executeTokenize(fullpath, relpath)
 
-	def _transform(self, node):
-		key = node.__class__.__name__
-		if key in self._fullvisitors:
-			visitors = self._fullvisitors[key]
-			for visitor in visitors:
-				node = visitor(self, node)
-		else:
-			node = self._generalTransform(node)
+		self.optimizer.endTokenize()
 
-		if key in self._transform_steps:
-			for step in self._transform_steps[key]:
-				node = step.transform(key, node, self.context)
+	def _executeTokenize(self, path, relpath):
+		self.file = open(path)
+		self.optimizer.executeTokenize(relpath, self.file.readline)
+		self.file.close()
 
-		if key in self._selfvisitors:
-			for visitor in self._selfvisitors[key]:
-				visitor(self, node)
+		print 'tokenizer completed, %s' % path
 
-		return node
+	def executeVisit(self):
+		for fullpath, relpath in self.filter_files.iteritems():
+			self.file = open(fullpath)
+			tree = ast.parse(self.file.read())
+			self.optimizer.executeVisit(relpath, tree)
+			print 'vistor completed, %s' % fullpath
 
-	def _generalTransform(self, node):
-		for field, old_value in ast.iter_fields(node):
-			old_value = getattr(node, field, None)
-			if isinstance(old_value, list):
-				new_values = []
-				for value in old_value:
-					if isinstance(value, ast.AST):
-						value = self._transform(value)
-						if value is None:
-							continue
-						elif not isinstance(value, ast.AST):
-							new_values.extend(value)
-							continue
-					new_values.append(value)
-				old_value[:] = new_values
-			elif isinstance(old_value, ast.AST):
-				new_node = self._transform(old_value)
-				if new_node is None:
-					delattr(node, field)
-				else:
-					setattr(node, field, new_node)
-		return node
+		self.optimizer.endVisit()
 
-	def callTransformers(self, key, node):
-		steps = self._transform_steps[key]
-		for step in steps:
-			new_node = step.visitTransform(key, node)
-			if type(new_node != node):
-				return new_node
-			node = new_node
+	def executeTransform(self):
+		modifys = {}
 
-		return node
+		for fullpath, relpath in self.filter_files.iteritems():
+			self.file = open(fullpath)
+			tree = ast.parse(self.file.read())
+			modify = self.optimizer.executeTransform(relpath, tree)
+			if True or tree.dirty:
+				self.unparse(fullpath, tree)
+			print 'transformer completed, %s' % fullpath
 
-
-class MessiahTokenizer(object):
-	TokenMapping = {
-		tokenize.COMMENT: 'Comment'
-	}
-
-	def tokenize(self, readline):
-		tokenize.tokenize(readline, self.tokeneater)
-
-	def tokeneater(self, type, token, srow_scol, erow_ecol, line):
-		if type not in self.TokenMapping:
-			return
-		key = self.TokenMapping[type]
-		if key in self._tokenizer_steps:
-			self.dispatchTokenizeCall(key, token, srow_scol, erow_ecol, line)
-
-	def dispatchTokenizeCall(self, key, token, srow_scol, erow_ecol, line):
-		steps = self._tokenizer_steps[key]
-		for step in steps:
-			step.visitTokenize(key, token, srow_scol, erow_ecol, line)
-
-
-class MessiahOptimizer(MessiahNodeTransformer, MessiahTokenizer):
-
-	def executeTokenize(self, path, readline):
-		for step in self._optimize_steps:
-			step.tokenizer.onStart(path)
-
-		self.tokenize(readline)
-
-	def executeVisit(self, path, tree):
-		for step in self._optimize_steps:
-			step.visitor.onStart(path)
-		self.visit(tree)
-
-	def executeTransform(self, path, tree):
-		for step in self._optimize_steps:
-			step.transformer.onStart(path)
-		return self.transform(tree)
-
-	def endTokenize(self):
-		for step in self._optimize_steps:
-			step.visitor.load(step.tokenizer.dump())
-
-	def endVisit(self):
-		for step in self._optimize_steps:
-			step.transformer.load(step.tokenizer.dump(), step.visitor.dump())
+	def unparse(self, path, tree):
+		src = '\n'.join(['# -*- coding:utf-8 -*-', unparser.unparse(tree)])
+		# print src
+		open(path, 'w').write(src)
