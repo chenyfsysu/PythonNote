@@ -4,7 +4,7 @@ import os
 
 
 CLEINT_PATHS = [
-	'client'
+	'client',
 	'common'
 ]
 

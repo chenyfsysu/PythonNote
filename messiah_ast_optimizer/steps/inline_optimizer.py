@@ -16,4 +16,4 @@ class InlineTransformer(MessiahStepTransformer):
 		return node
 
 
-InlineOptimizeStep = MessiahOptimizerStep(tokenizer=InlineOptimizerStep, visitor=InlineVisitor, transformer=InlineTransformer)
+InlineOptimizeStep = MessiahOptimizerStep(tokenizer=InlineTokenizer, visitor=InlineVisitor, transformer=InlineTransformer)

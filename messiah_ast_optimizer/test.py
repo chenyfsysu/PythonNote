@@ -1,26 +1,9 @@
-class Optimizer(object):
-	def __init__(self):
-		self.tokenize_data = {}
-		self.visitor_data = {}
-
-
-class Tokenizer(object):
-	def __init__(self):
+class A(object):
+	def inner(self):
 		pass
 
-	def enter(self):
-		"""執行tokenize"""
-		pass
+def func():
+	pass
 
-	def exit(self):
-		"""退出tokenize"""
-		pass
-
-
-問題在於@Optimize在Meta之後！！！
- 
-
-TokenizeWalker
-VisitWalker
-TransformWalker
-walker.walk(tokenizers)
+B = 1000
+del B

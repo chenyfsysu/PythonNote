@@ -85,7 +85,7 @@ class LazyImportObject(Object):
 
 @ObjectAllocator.lookup(ast.FunctionDef)
 class FunctionObject(Object):
-	def __init__(self, node, name):
+	def __init__(self, name, node):
 		super(FunctionObject, self).__init__(name, node)
 
 	@classmethod
@@ -95,7 +95,7 @@ class FunctionObject(Object):
 
 @ObjectAllocator.lookup(ast.ClassDef)
 class ClassObject(Object):
-	def __init__(self, node, name):
+	def __init__(self, name, node):
 		super(ClassObject, self).__init__(name, node)
 
 	@classmethod
@@ -117,7 +117,7 @@ class ModuleObject(Object):
 		return os.path.dirname(self.file)
 
 	def load(self, name):
-		pass
+		return self.locals.get(name, None)
 
 	@classmethod
 	def create(cls, node, name):

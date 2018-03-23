@@ -34,6 +34,18 @@ class IVisitor(object):
 	def __init__(self, optimizer=None):
 		self.optimizer = optimizer
 
+	def onEnter(self):
+		pass
+
+	def onExit(self):
+		pass
+
+	def onVisitFile(self, fullpath, relpath):
+		pass
+
+	def onLeaveFile(self, fullpath, relpath):
+		pass
+
 
 class NodeVisitor(IVisitor, ast.NodeVisitor):
 	pass

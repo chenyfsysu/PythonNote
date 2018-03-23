@@ -26,8 +26,11 @@
 import ast
 import utils
 import const
+import setting
+
 from collections import defaultdict
 from objects import ObjectAllocator, LazyImportObject
+from module_loader import ModuleLoader
 
 
 class Frame(object):
@@ -46,23 +49,30 @@ class Namespace(dict):
 		super(Namespace, self).__init__()
 
 
-class Context(object):
+class IContext(object):
+	def __init__(self, rootpath, relpath):
+		self.__rootpath__ = rootpath
+		self.__relpath__ = relpath
+
+
+class TokenizeContext(IContext):
+	def __init__(self, rootpath, relpath):
+		super(TokenizeContext, self).__init__(rootpath, relpath)
+
+
+class AstContext(IContext):
 	"""包括作用域和当前分析node属于哪个function、哪个class"""
 
-	def __init__(self):
-		super(Context, self).__init__()
-		self.__file__ = ''
-		self.__name__ = ''
+	def __init__(self, rootpath, relpath, name):
+		super(AstContext, self).__init__(rootpath, relpath)
+		self.__name__ = name
 
 		self.locals_stack = []
 		self.globals = Namespace()
 
 		self.frames = []
-		self.module_loader = None
-
-		self.file_outdegrees = defaultdict(list) # 依赖
-		self.file_indegrees = defaultdict(list) # 被依赖
-
+		self.loader = ModuleLoader(rootpath, setting.CLEINT_PATHS)
+		self.loader.initRoot(relpath)
 
 	def storeAll(self, vars):
 		"""store"""
@@ -91,16 +101,8 @@ class Context(object):
 		if not isinstance(val, LazyImportObject) or val.node:
 			return val
 
-		module, node = self.loader.load(*val.dump())
-		val.module = module
-		val.node = node
-
-		return val
-
-
-	def incFileDependency(self, src, dst):
-		self.file_outdegrees[src].append(dst)
-		self.file_indegrees[dst].append(src)
+		var = self.loader.load(val.module, val.fromlist, val.level)
+		return var
 
 	@property
 	def locals(self):

@@ -19,27 +19,35 @@ class ConstantTokenizer(MessiahStepTokenizer):
 
 		self.inline_consts = defaultdict(list)
 
-	def visit_Comment(self, token, srow_scol, erow_ecol, line):
-		if self._file not in setting.CONFIG_INLINE_CONST:
+	def onExit(self):
+		self.optimizer and self.optimizer.storeData(self.__class__, self.inline_consts)
+
+	def visit_Comment(self, token, srow_scol, erow_ecol, line, context):
+		if context.__relpath__ not in setting.CONFIG_INLINE_CONST:
 			return
 
 		if setting.CONST_INLINE_TAG in token:
 			self.inline_consts[self._file].append(srow_scol[0])
 
-	def dump(self):
-		return self.inline_consts
-
 
 class ConstantVisitor(MessiahStepVisitor):
-	def __init__(self):
+	def __init__(self, optimizer):
+		super(ConstantVisitor, self).__init__(optimizer)
+		self.inline_consts = defaultdict(list)
 		self.constants = {}
 
+	def onEnter(self):
+		self.inline_consts = self.optimizer.loadData(ConstantTokenizer)
+
+	def onExit(self):
+		self.optimizer and self.optimizer.storeData(self.__class__, self.constants)
+
 	def visit_Assign(self, node, context):
-		if self._file not in setting.INLINE_CONST_FILES:
+		if context.__relpath__  not in setting.INLINE_CONST_FILES:
 			return
 
-		if self._file not in setting.INLINE_CONST and \
-			utils.get_lineno(node) not in self.tokenizer_data.get(self._file, []):
+		if context.__relpath__  not in setting.INLINE_CONST and \
+			utils.get_lineno(node) not in self.inline_consts.get(context.__relpath__ , []):
 			return
 
 		if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
@@ -49,7 +57,7 @@ class ConstantVisitor(MessiahStepVisitor):
 			return
 
 		constant = utils.get_constant(node.value)
-		self.constants[(self.getConstName(self._file), node.targets[0].id)] = constant
+		self.constants[(self.getConstName(context.__relpath__ ), node.targets[0].id)] = constant
 
 	def isConstant(self, node):
 		if isinstance(node, (ast.Num, ast.Str)):
@@ -64,23 +72,26 @@ class ConstantVisitor(MessiahStepVisitor):
 			return setting.INLINE_CONST[path]
 		return setting.CONFIG_INLINE_CONST[path]
 
-	def dump(self):
-		return self.constants
-
 
 class ConstantTransformer(MessiahStepTransformer):
+	def __init__(self, optimizer):
+		super(ConstantTransformer, self).__init__(optimizer)
+		self.constants = {}
+
+	def onEnter(self):
+		self.constants = self.optimizer.loadData(ConstantVisitor, default={})
 
 	def visit_Attribute(self, node, context):
 		if not isinstance(node.value, ast.Name) or not isinstance(node.ctx, ast.Load):
 			return node
 
-		var = context.load(node.value.id)
+		var = context.load(node.value.id, lazy=False)
 		if not isinstance(var, LazyImportObject):
 			return node
-		
+
 		attrid = (node.value.id, node.attr)
-		if attrid in self.visitor_data:
-			constant = self.visitor_data[attrid]
+		if attrid in self.constants:
+			constant = self.constants[attrid]
 			node = utils.new_constant(constant, node)
 			utils.set_comment(node, '%s.%s=%s' % (attrid[0], attrid[1], constant))
 		return node

@@ -3,10 +3,12 @@
 import ast
 import utils
 import const
+import tokenize
 
 from collections import defaultdict
+from itertools import imap
 from base import NodeVisitor
-from context import Context, Frame, Namespace
+from context import Frame, Namespace, TokenizeContext, AstContext
 from objects import ObjectAllocator, Object
 
 
@@ -14,12 +16,13 @@ class ContextVisitor(NodeVisitor):
 
 	def visitDefinitionBlock(self, node):
 		context = self.context
+		definitions = ObjectAllocator.allocate(node)
+		context.storeAll(definitions)
+
 		context.frames.append(Frame.create(node))
 		context.locals_stack.append(Namespace())
 		
-		node = self.visit(node)
-		definitions = ObjectAllocator.allocate(node)
-		context.storeAll(definitions)
+		node = self.genericVisit(node)
 		context.frames.pop()
 		context.locals_stack.pop()
 
@@ -27,7 +30,7 @@ class ContextVisitor(NodeVisitor):
 
 	def visitClosureBlock(self, node):
 		self.context.locals_stack.append(Namespace())
-		node = self.visit(node)
+		node = self.genericVisit(node)
 		self.context.locals_stack.pop()
 
 		return node
@@ -38,7 +41,7 @@ class ContextVisitor(NodeVisitor):
 	def fullvisit_Module(self, node):
 		self.context.frames.append(Frame.create(node))
 		self.context.locals_stack.append(Namespace())
-		return self.visit(node)
+		return self.genericVisit(node)
 
 	def fullvisit_ClassDef(self, node):
 		return self.visitDefinitionBlock(node)
@@ -91,11 +94,14 @@ class ContextVisitor(NodeVisitor):
 
 
 class Walker(object):
-	def __init__(self):
+	def __init__(self, rootpath):
+		self.rootpath = rootpath
+		self.raw_visitors = []
 		self.visitors = defaultdict(list)
 		self.fullvisitors = defaultdict(list)
 
 	def activate(self, visitors):
+		self.raw_visitors = visitors
 		map(self.register, visitors)
 
 	def register(self, visitor):
@@ -116,15 +122,31 @@ class Walker(object):
 		if key not in self.visitors:
 			return
 
-		for visitor in self.visitors:
+		for visitor in self.visitors[key]:
 			visitor(*args)
 
 	def dispatchFull(self, key, *args):
 		if key not in self.fullvisitors:
 			return
 
-		for visitor in self.fullvisitors:
+		for visitor in self.fullvisitors[key]:
 			visitor(*args)
+
+	def notifyEnter(self):
+		for visitor in self.raw_visitors:
+			visitor.onEnter()
+
+	def notifyExit(self):
+		for visitor in self.raw_visitors:
+			visitor.onExit()
+
+	def notifyVisitFile(self, fullpath, relpath):
+		for visitor in self.raw_visitors:
+			visitor.onVisitFile(fullpath, relpath)
+
+	def notifyLeaveFile(self, fullpath, relpath):
+		for visitor in self.raw_visitors:
+			visitor.onLeaveFile(fullpath, relpath)
 
 
 class TokenizeWalker(Walker):
@@ -132,50 +154,66 @@ class TokenizeWalker(Walker):
 		tokenize.COMMENT: 'Comment'
 	}
 
-	def __init__(self):
-		self.tokenizers = tokenizers
+	def __init__(self, rootpath):
+		super(TokenizeWalker, self).__init__(rootpath)
+		self.context = None
 
-	def walk(self, realine):
+	def walk(self, fullpath, relpath):
+		self.notifyVisitFile(fullpath, relpath)
+
+		self.context = TokenizeContext(fullpath, relpath)
+		readline = open(fullpath).readline
 		tokenize.tokenize(readline, self.tokeneater)
+
+		self.notifyLeaveFile(fullpath, relpath)
 
 	def tokeneater(self, type, token, srow_scol, erow_ecol, line):
 		if type not in self.TokenMapping:
 			return
 		key = self.TokenMapping[type]
-		self.dispatch(key, token, srow_scol, erow_ecol, line)
+		self.dispatch(key, token, srow_scol, erow_ecol, line, self.context)
 
 
 class VisitWalker(Walker, ContextVisitor):
-	def __init__(self):
-		super(VisitWalker, self).__init__()
+	def __init__(self, rootpath):
+		super(VisitWalker, self).__init__(rootpath)
+		self.context = None
 		self.selfvisitors = defaultdict(list)
+		self.registerSelf()
 
 	def registerSelf(self):
-		for func in visitor._visitors:
+		for func in self._visitors:
 			key = func[6:]
-			method = getattr(visitor, func)
+			method = getattr(self, func)
 			self.selfvisitors[key].append(method)
 
-		for func in visitor._fullvisitors:
+		for func in self._fullvisitors:
 			key = func[10:]
-			method = getattr(visitor, func)
+			method = getattr(self, func)
 			self.fullvisitors[key].append(method)
 
-	def walk(self, node):
-		pass
+	def walk(self, fullpath, relpath):
+		self.notifyVisitFile(fullpath, relpath)
+
+		self.context = AstContext(self.rootpath, relpath, '__main__')
+		tree = ast.parse(open(fullpath).read())
+		tree = self.visit(tree)
+
+		self.notifyLeaveFile(fullpath, relpath)
+		return tree
 
 	def visit(self, node):
 		key = node.__class__.__name__
 		if key in self.fullvisitors:
-			self.dispatchFull(key)
+			self.dispatchFull(key, node)
 		else:
 			self.genericVisit(node)
 
-		self.dispatch(node)
+		self.dispatch(key, node, self.context)
 
 		if key in self.selfvisitors:
 			for visitor in self.selfvisitors[key]:
-				visitor(self, node)
+				visitor(node)
 
 		return node
 
@@ -192,25 +230,26 @@ class VisitWalker(Walker, ContextVisitor):
 
 
 class TransformWalker(VisitWalker):
-	def __init__(self):
-		super(TransformWalker, self).__init__()
+	def __init__(self, rootpath):
+		super(TransformWalker, self).__init__(rootpath)
 
 	def visit(self, node):
 		key = node.__class__.__name__
-		if key in self._fullvisitors:
-			visitors = self._fullvisitors[key]
+		if key in self.fullvisitors:
+			visitors = self.fullvisitors[key]
 			for visitor in visitors:
-				node = visitor(self, node)
+				node = visitor(node)
 		else:
 			node = self.generalVisit(node)
 
-		if key in self.visit_steps:
-			for step in self.visit_steps[key]:
-				node = step.transform(key, node, self.context)
 
-		if key in self._selfvisitors:
-			for visitor in self._selfvisitors[key]:
-				visitor(self, node)
+		if key in self.visitors:
+			for visitor in self.visitors[key]:
+				node = visitor(node, self.context)
+
+		if key in self.selfvisitors:
+			for visitor in self.selfvisitors[key]:
+				visitor(node)
 
 		return node
 

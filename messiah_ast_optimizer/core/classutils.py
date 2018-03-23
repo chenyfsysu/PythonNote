@@ -4,7 +4,6 @@ import ast
 import utils
 
 from finder import AttributeFinder
-from base import Definition
 
 
 def ismethod(node):
@@ -56,7 +55,8 @@ def split_cls_body(cls):
 def merge_component(host, component):
 	attrs, methods, properties, decorator_list = [], {}, [], []
 
-	component.insert(0, [host])
+	component.insert(0, host)
+	print component
 	for comp in component:
 		prop, attr, method = split_cls_body(comp)
 
@@ -69,8 +69,8 @@ def merge_component(host, component):
 
 	# property_all, property_flag, property_delay = fold_properties(properties) # 离线生成Property
 
-	host.body = body
-	host.decorator_list = decorator_list
+	host[0].body = body
+	host[0].decorator_list = decorator_list
 
 	return host
 

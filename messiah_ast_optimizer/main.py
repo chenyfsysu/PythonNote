@@ -10,7 +10,7 @@ sys.path.append('lib')
 
 
 def execute(path, ignore_dirs, ignore_files):
-	executor = OptimizeExecutor(Optimizer(), path, ignore_dirs, ignore_files)
+	executor = OptimizeExecutor(Optimizer(path, ignore_dirs, ignore_files))
 	executor.execute()
 
 

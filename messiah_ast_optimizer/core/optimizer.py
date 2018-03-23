@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
 
+import os
+import scandir
+import unparser
+
 from walker import TokenizeWalker, VisitWalker, TransformWalker
 
 
@@ -16,7 +20,7 @@ def OptimizeStep(*stepcls):
 
 		kclass._tokenizer_visitors = tokenizer_visitors
 		kclass._visit_visitors = visit_visitors
-		kclass._transform_visitors = transformer
+		kclass._transform_visitors = transform_visitors
 
 		return kclass
 
@@ -24,10 +28,16 @@ def OptimizeStep(*stepcls):
 
 
 class MessiahOptimizer(object):
-	def __init__(self):
-		self.tokenize_walker = TokenizeWalker()
-		self.visit_walker = VisitWalker()
-		self.transform_walker = TransformWalker()
+	def __init__(self, path, ignore_dirs, ignore_files):
+		self.path = path
+		self.ignore_dirs = [os.path.normpath(d) for d in ignore_dirs]
+		self.ignore_files = [os.path.normpath(f) for f in ignore_files]
+		self.file = None
+		self.filter_files = {}
+
+		self.tokenize_walker = TokenizeWalker(path)
+		self.visit_walker = VisitWalker(path)
+		self.transform_walker = TransformWalker(path)
 
 		self.tokenizers = []
 		self.visitors = []
@@ -37,6 +47,11 @@ class MessiahOptimizer(object):
 
 	def optimize(self):
 		self.activate()
+		self.filterOptimizeFiles()
+
+		self.processTokenize()
+		self.processVisit()
+		self.processTransform()
 
 	def activate(self):
 		self.tokenizers = [cls(self) for cls in self._tokenizer_visitors]
@@ -48,27 +63,7 @@ class MessiahOptimizer(object):
 		self.transformers = [cls(self) for cls in self._transform_visitors]
 		self.transform_walker.activate(self.transformers)
 
-
 	def filterOptimizeFiles(self):
-		pass
-
-	def processTokenize(self):
-		pass
-
-	def processVisit(self):
-		pass
-
-	def processTransform(self):
-		pass
-
-	def storeData(self, visitor, data):
-		self.optimize_data[visitor.__name__] = data
-
-	def loadData(self, visitor, data):
-		return self.optimize_data.get(visitor.__name__, None)
-
-
-	def filterExecuteFiles(self):
 		self.filter_files = {}
 		for root, dirs, files in scandir.walk(self.path, topdown=True):
 			dirs[:] = [d for d in dirs if os.path.normpath(os.path.join(root, d)) not in self.ignore_dirs]
@@ -79,40 +74,34 @@ class MessiahOptimizer(object):
 					relpath = os.path.relpath(fullpath, self.path)
 					self.filter_files[fullpath] = relpath
 
-	def executeTokenize(self):
+	def processTokenize(self):
+		self.tokenize_walker.notifyEnter()
 		for fullpath, relpath in self.filter_files.iteritems():
-			self._executeTokenize(fullpath, relpath)
+			self.tokenize_walker.walk(fullpath, relpath)
 
-		self.optimizer.endTokenize()
+		self.tokenize_walker.notifyExit()
 
-	def _executeTokenize(self, path, relpath):
-		self.file = open(path)
-		self.optimizer.executeTokenize(relpath, self.file.readline)
-		self.file.close()
-
-		print 'tokenizer completed, %s' % path
-
-	def executeVisit(self):
+	def processVisit(self):
+		self.visit_walker.notifyEnter()
 		for fullpath, relpath in self.filter_files.iteritems():
-			self.file = open(fullpath)
-			tree = ast.parse(self.file.read())
-			self.optimizer.executeVisit(relpath, tree)
-			print 'vistor completed, %s' % fullpath
+			self.visit_walker.walk(fullpath, relpath)
 
-		self.optimizer.endVisit()
+		self.visit_walker.notifyExit()
 
-	def executeTransform(self):
-		modifys = {}
-
+	def processTransform(self):
+		self.transform_walker.notifyEnter()
 		for fullpath, relpath in self.filter_files.iteritems():
-			self.file = open(fullpath)
-			tree = ast.parse(self.file.read())
-			modify = self.optimizer.executeTransform(relpath, tree)
-			if True or tree.dirty:
-				self.unparse(fullpath, tree)
-			print 'transformer completed, %s' % fullpath
+			node = self.transform_walker.walk(fullpath, relpath)
+			self.unparse(fullpath, node)
+
+		self.transform_walker.notifyExit()
+
+	def storeData(self, visitor, data):
+		self.optimize_data[visitor.__name__] = data
+
+	def loadData(self, visitor, default=None):
+		return self.optimize_data.get(visitor.__name__, default)
 
 	def unparse(self, path, tree):
 		src = '\n'.join(['# -*- coding:utf-8 -*-', unparser.unparse(tree)])
-		# print src
 		open(path, 'w').write(src)

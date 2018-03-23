@@ -2,12 +2,12 @@
 
 
 from core.optimizer import MessiahOptimizer, OptimizeStep
-from steps.constant_optimizer import ConstantOptimizerStep
-from steps.inline_optimizer import InlineOptimizerStep
-from steps.component_optimizer import ComponentOptimizerStep
+from steps.constant_optimizer import ConstantOptimizeStep
+from steps.inline_optimizer import InlineOptimizeStep
+from steps.component_optimizer import ComponentOptimizeStep
 
 
-@OptimizeStep(ConstantOptimizerStep, InlineOptimizerStep, ComponentOptimizerStep)
+@OptimizeStep(ConstantOptimizeStep, InlineOptimizeStep, ComponentOptimizeStep)
 class Optimizer(MessiahOptimizer):
 	pass
 

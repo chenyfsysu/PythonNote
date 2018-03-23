@@ -17,22 +17,24 @@ from objects import ModuleObject
 class ModuleLoader(object):
 	"""modulefinder以兼容ast类型的import, 暂时不支持import *"""
 
-	def __init__(self, path):
+	def __init__(self, rootpath, path):
 		self.root = None
-		self.path = path or []
+		self.rootpath = rootpath
+		self.path = path if path else []
+		self.path = [os.path.join(rootpath, p) for p in self.path]
 		self.modules = {}
 
-	def initRoot(self, root_path):
-		pname = self.getModuleName(root_path)
-		print utils.get_parent_dir(root_path, 2)
+	def initRoot(self, relpath):
+		fullpath = os.path.join(self.rootpath, relpath)
+		pname = self.getModuleName(relpath)
 
 		tail = ''
 		for i, name in enumerate(reversed(pname.split('.'))):
 			if name == '__init__':
 				continue
 			tail = '.'.join([name, tail]) if tail else name
-			path = None if i <= 0 else utils.get_parent_dir(root_path, i + 1)
-			file = os.path.join(path, '__init__.py') if path else root_path
+			path = None if i <= 0 else utils.get_parent_dir(fullpath, i + 1)
+			file = os.path.join(path, '__init__.py') if path else fullpath
 			m = ModuleObject(tail, file, path)
 			self.modules[tail] = m
 
@@ -58,6 +60,7 @@ class ModuleLoader(object):
 			else:
 				m = self.loadModuleLevel(name, fromlist, level, caller)
 		except ImportError as e:
+			print e
 			m = None
 
 		return m
