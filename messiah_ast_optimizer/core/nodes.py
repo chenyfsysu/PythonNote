@@ -1,11 +1,15 @@
+# -*- coding:utf-8 -*-
+
 
 class INode(object):
-	pass
+	def __init__(self, parent):
+		self.parent = parent
+
 
 class alias(INode):
 	_fields = ('name', 'asname')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(alias, self).__init__(parent)
 
 	def postinit(self, name, asname):
@@ -16,7 +20,7 @@ class alias(INode):
 class arguments(INode):
 	_fields = ('args', 'vararg', 'kwarg', 'defaults')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(arguments, self).__init__(parent)
 
 	def postinit(self, args, vararg, kwarg, defaults):
@@ -29,7 +33,7 @@ class arguments(INode):
 class boolop(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(boolop, self).__init__(parent)
 
 	def postinit(self):
@@ -39,7 +43,7 @@ class boolop(INode):
 class cmpop(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(cmpop, self).__init__(parent)
 
 	def postinit(self):
@@ -49,7 +53,7 @@ class cmpop(INode):
 class comprehension(INode):
 	_fields = ('target', 'iter', 'ifs')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(comprehension, self).__init__(parent)
 
 	def postinit(self, target, iter, ifs):
@@ -61,7 +65,7 @@ class comprehension(INode):
 class excepthandler(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(excepthandler, self).__init__(parent)
 
 	def postinit(self):
@@ -71,7 +75,7 @@ class excepthandler(INode):
 class expr(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(expr, self).__init__(parent)
 
 	def postinit(self):
@@ -81,7 +85,7 @@ class expr(INode):
 class expr_context(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(expr_context, self).__init__(parent)
 
 	def postinit(self):
@@ -91,7 +95,7 @@ class expr_context(INode):
 class keyword(INode):
 	_fields = ('arg', 'value')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(keyword, self).__init__(parent)
 
 	def postinit(self, arg, value):
@@ -102,7 +106,7 @@ class keyword(INode):
 class mod(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(mod, self).__init__(parent)
 
 	def postinit(self):
@@ -112,7 +116,7 @@ class mod(INode):
 class operator(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(operator, self).__init__(parent)
 
 	def postinit(self):
@@ -122,7 +126,7 @@ class operator(INode):
 class slice(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(slice, self).__init__(parent)
 
 	def postinit(self):
@@ -132,7 +136,7 @@ class slice(INode):
 class stmt(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(stmt, self).__init__(parent)
 
 	def postinit(self):
@@ -142,7 +146,7 @@ class stmt(INode):
 class unaryop(INode):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(unaryop, self).__init__(parent)
 
 	def postinit(self):
@@ -152,7 +156,7 @@ class unaryop(INode):
 class Add(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Add, self).__init__(parent)
 
 	def postinit(self):
@@ -162,7 +166,7 @@ class Add(operator):
 class And(boolop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(And, self).__init__(parent)
 
 	def postinit(self):
@@ -172,7 +176,7 @@ class And(boolop):
 class Assert(stmt):
 	_fields = ('test', 'msg')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Assert, self).__init__(parent)
 
 	def postinit(self, test, msg):
@@ -183,7 +187,7 @@ class Assert(stmt):
 class Assign(stmt):
 	_fields = ('targets', 'value')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Assign, self).__init__(parent)
 
 	def postinit(self, targets, value):
@@ -194,7 +198,7 @@ class Assign(stmt):
 class Attribute(expr):
 	_fields = ('value', 'attr', 'ctx')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Attribute, self).__init__(parent)
 
 	def postinit(self, value, attr, ctx):
@@ -206,7 +210,7 @@ class Attribute(expr):
 class AugAssign(stmt):
 	_fields = ('target', 'op', 'value')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(AugAssign, self).__init__(parent)
 
 	def postinit(self, target, op, value):
@@ -218,7 +222,7 @@ class AugAssign(stmt):
 class AugLoad(expr_context):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(AugLoad, self).__init__(parent)
 
 	def postinit(self):
@@ -228,7 +232,7 @@ class AugLoad(expr_context):
 class AugStore(expr_context):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(AugStore, self).__init__(parent)
 
 	def postinit(self):
@@ -238,7 +242,7 @@ class AugStore(expr_context):
 class BinOp(expr):
 	_fields = ('left', 'op', 'right')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(BinOp, self).__init__(parent)
 
 	def postinit(self, left, op, right):
@@ -250,7 +254,7 @@ class BinOp(expr):
 class BitAnd(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(BitAnd, self).__init__(parent)
 
 	def postinit(self):
@@ -260,7 +264,7 @@ class BitAnd(operator):
 class BitOr(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(BitOr, self).__init__(parent)
 
 	def postinit(self):
@@ -270,7 +274,7 @@ class BitOr(operator):
 class BitXor(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(BitXor, self).__init__(parent)
 
 	def postinit(self):
@@ -280,7 +284,7 @@ class BitXor(operator):
 class BoolOp(expr):
 	_fields = ('op', 'values')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(BoolOp, self).__init__(parent)
 
 	def postinit(self, op, values):
@@ -291,7 +295,7 @@ class BoolOp(expr):
 class Break(stmt):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Break, self).__init__(parent)
 
 	def postinit(self):
@@ -301,7 +305,7 @@ class Break(stmt):
 class Call(expr):
 	_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Call, self).__init__(parent)
 
 	def postinit(self, func, args, keywords, starargs, kwargs):
@@ -315,7 +319,7 @@ class Call(expr):
 class ClassDef(stmt):
 	_fields = ('name', 'bases', 'body', 'decorator_list')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(ClassDef, self).__init__(parent)
 
 	def postinit(self, name, bases, body, decorator_list):
@@ -328,7 +332,7 @@ class ClassDef(stmt):
 class Compare(expr):
 	_fields = ('left', 'ops', 'comparators')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Compare, self).__init__(parent)
 
 	def postinit(self, left, ops, comparators):
@@ -340,7 +344,7 @@ class Compare(expr):
 class Continue(stmt):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Continue, self).__init__(parent)
 
 	def postinit(self):
@@ -350,7 +354,7 @@ class Continue(stmt):
 class Del(expr_context):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Del, self).__init__(parent)
 
 	def postinit(self):
@@ -360,7 +364,7 @@ class Del(expr_context):
 class Delete(stmt):
 	_fields = ('targets',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Delete, self).__init__(parent)
 
 	def postinit(self, targets):
@@ -370,7 +374,7 @@ class Delete(stmt):
 class Dict(expr):
 	_fields = ('keys', 'values')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Dict, self).__init__(parent)
 
 	def postinit(self, keys, values):
@@ -381,7 +385,7 @@ class Dict(expr):
 class DictComp(expr):
 	_fields = ('key', 'value', 'generators')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(DictComp, self).__init__(parent)
 
 	def postinit(self, key, value, generators):
@@ -393,7 +397,7 @@ class DictComp(expr):
 class Div(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Div, self).__init__(parent)
 
 	def postinit(self):
@@ -403,7 +407,7 @@ class Div(operator):
 class Ellipsis(slice):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Ellipsis, self).__init__(parent)
 
 	def postinit(self):
@@ -413,7 +417,7 @@ class Ellipsis(slice):
 class Eq(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Eq, self).__init__(parent)
 
 	def postinit(self):
@@ -423,7 +427,7 @@ class Eq(cmpop):
 class ExceptHandler(excepthandler):
 	_fields = ('type', 'name', 'body')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(ExceptHandler, self).__init__(parent)
 
 	def postinit(self, type, name, body):
@@ -435,7 +439,7 @@ class ExceptHandler(excepthandler):
 class Exec(stmt):
 	_fields = ('body', 'globals', 'locals')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Exec, self).__init__(parent)
 
 	def postinit(self, body, globals, locals):
@@ -447,7 +451,7 @@ class Exec(stmt):
 class Expr(stmt):
 	_fields = ('value',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Expr, self).__init__(parent)
 
 	def postinit(self, value):
@@ -457,7 +461,7 @@ class Expr(stmt):
 class Expression(mod):
 	_fields = ('body',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Expression, self).__init__(parent)
 
 	def postinit(self, body):
@@ -467,7 +471,7 @@ class Expression(mod):
 class ExtSlice(slice):
 	_fields = ('dims',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(ExtSlice, self).__init__(parent)
 
 	def postinit(self, dims):
@@ -477,7 +481,7 @@ class ExtSlice(slice):
 class FloorDiv(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(FloorDiv, self).__init__(parent)
 
 	def postinit(self):
@@ -487,7 +491,7 @@ class FloorDiv(operator):
 class For(stmt):
 	_fields = ('target', 'iter', 'body', 'orelse')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(For, self).__init__(parent)
 
 	def postinit(self, target, iter, body, orelse):
@@ -500,7 +504,7 @@ class For(stmt):
 class FunctionDef(stmt):
 	_fields = ('name', 'args', 'body', 'decorator_list')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(FunctionDef, self).__init__(parent)
 
 	def postinit(self, name, args, body, decorator_list):
@@ -513,7 +517,7 @@ class FunctionDef(stmt):
 class GeneratorExp(expr):
 	_fields = ('elt', 'generators')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(GeneratorExp, self).__init__(parent)
 
 	def postinit(self, elt, generators):
@@ -524,7 +528,7 @@ class GeneratorExp(expr):
 class Global(stmt):
 	_fields = ('names',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Global, self).__init__(parent)
 
 	def postinit(self, names):
@@ -534,7 +538,7 @@ class Global(stmt):
 class Gt(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Gt, self).__init__(parent)
 
 	def postinit(self):
@@ -544,7 +548,7 @@ class Gt(cmpop):
 class GtE(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(GtE, self).__init__(parent)
 
 	def postinit(self):
@@ -554,7 +558,7 @@ class GtE(cmpop):
 class If(stmt):
 	_fields = ('test', 'body', 'orelse')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(If, self).__init__(parent)
 
 	def postinit(self, test, body, orelse):
@@ -566,7 +570,7 @@ class If(stmt):
 class IfExp(expr):
 	_fields = ('test', 'body', 'orelse')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(IfExp, self).__init__(parent)
 
 	def postinit(self, test, body, orelse):
@@ -578,7 +582,7 @@ class IfExp(expr):
 class Import(stmt):
 	_fields = ('names',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Import, self).__init__(parent)
 
 	def postinit(self, names):
@@ -588,7 +592,7 @@ class Import(stmt):
 class ImportFrom(stmt):
 	_fields = ('module', 'names', 'level')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(ImportFrom, self).__init__(parent)
 
 	def postinit(self, module, names, level):
@@ -600,7 +604,7 @@ class ImportFrom(stmt):
 class In(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(In, self).__init__(parent)
 
 	def postinit(self):
@@ -610,7 +614,7 @@ class In(cmpop):
 class Index(slice):
 	_fields = ('value',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Index, self).__init__(parent)
 
 	def postinit(self, value):
@@ -620,7 +624,7 @@ class Index(slice):
 class Interactive(mod):
 	_fields = ('body',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Interactive, self).__init__(parent)
 
 	def postinit(self, body):
@@ -630,7 +634,7 @@ class Interactive(mod):
 class Invert(unaryop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Invert, self).__init__(parent)
 
 	def postinit(self):
@@ -640,7 +644,7 @@ class Invert(unaryop):
 class Is(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Is, self).__init__(parent)
 
 	def postinit(self):
@@ -650,7 +654,7 @@ class Is(cmpop):
 class IsNot(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(IsNot, self).__init__(parent)
 
 	def postinit(self):
@@ -660,7 +664,7 @@ class IsNot(cmpop):
 class LShift(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(LShift, self).__init__(parent)
 
 	def postinit(self):
@@ -670,7 +674,7 @@ class LShift(operator):
 class Lambda(expr):
 	_fields = ('args', 'body')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Lambda, self).__init__(parent)
 
 	def postinit(self, args, body):
@@ -681,7 +685,7 @@ class Lambda(expr):
 class List(expr):
 	_fields = ('elts', 'ctx')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(List, self).__init__(parent)
 
 	def postinit(self, elts, ctx):
@@ -692,7 +696,7 @@ class List(expr):
 class ListComp(expr):
 	_fields = ('elt', 'generators')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(ListComp, self).__init__(parent)
 
 	def postinit(self, elt, generators):
@@ -703,7 +707,7 @@ class ListComp(expr):
 class Load(expr_context):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Load, self).__init__(parent)
 
 	def postinit(self):
@@ -713,7 +717,7 @@ class Load(expr_context):
 class Lt(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Lt, self).__init__(parent)
 
 	def postinit(self):
@@ -723,7 +727,7 @@ class Lt(cmpop):
 class LtE(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(LtE, self).__init__(parent)
 
 	def postinit(self):
@@ -733,7 +737,7 @@ class LtE(cmpop):
 class Mod(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Mod, self).__init__(parent)
 
 	def postinit(self):
@@ -743,7 +747,7 @@ class Mod(operator):
 class Module(mod):
 	_fields = ('body',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Module, self).__init__(parent)
 
 	def postinit(self, body):
@@ -753,7 +757,7 @@ class Module(mod):
 class Mult(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Mult, self).__init__(parent)
 
 	def postinit(self):
@@ -763,7 +767,7 @@ class Mult(operator):
 class Name(expr):
 	_fields = ('id', 'ctx')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Name, self).__init__(parent)
 
 	def postinit(self, id, ctx):
@@ -774,7 +778,7 @@ class Name(expr):
 class Not(unaryop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Not, self).__init__(parent)
 
 	def postinit(self):
@@ -784,7 +788,7 @@ class Not(unaryop):
 class NotEq(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(NotEq, self).__init__(parent)
 
 	def postinit(self):
@@ -794,7 +798,7 @@ class NotEq(cmpop):
 class NotIn(cmpop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(NotIn, self).__init__(parent)
 
 	def postinit(self):
@@ -804,7 +808,7 @@ class NotIn(cmpop):
 class Num(expr):
 	_fields = ('n',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Num, self).__init__(parent)
 
 	def postinit(self, n):
@@ -814,7 +818,7 @@ class Num(expr):
 class Or(boolop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Or, self).__init__(parent)
 
 	def postinit(self):
@@ -824,7 +828,7 @@ class Or(boolop):
 class Param(expr_context):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Param, self).__init__(parent)
 
 	def postinit(self):
@@ -834,7 +838,7 @@ class Param(expr_context):
 class Pass(stmt):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Pass, self).__init__(parent)
 
 	def postinit(self):
@@ -844,7 +848,7 @@ class Pass(stmt):
 class Pow(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Pow, self).__init__(parent)
 
 	def postinit(self):
@@ -854,7 +858,7 @@ class Pow(operator):
 class Print(stmt):
 	_fields = ('dest', 'values', 'nl')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Print, self).__init__(parent)
 
 	def postinit(self, dest, values, nl):
@@ -866,7 +870,7 @@ class Print(stmt):
 class RShift(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(RShift, self).__init__(parent)
 
 	def postinit(self):
@@ -876,7 +880,7 @@ class RShift(operator):
 class Raise(stmt):
 	_fields = ('type', 'inst', 'tback')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Raise, self).__init__(parent)
 
 	def postinit(self, type, inst, tback):
@@ -888,7 +892,7 @@ class Raise(stmt):
 class Repr(expr):
 	_fields = ('value',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Repr, self).__init__(parent)
 
 	def postinit(self, value):
@@ -898,7 +902,7 @@ class Repr(expr):
 class Return(stmt):
 	_fields = ('value',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Return, self).__init__(parent)
 
 	def postinit(self, value):
@@ -908,7 +912,7 @@ class Return(stmt):
 class Set(expr):
 	_fields = ('elts',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Set, self).__init__(parent)
 
 	def postinit(self, elts):
@@ -918,7 +922,7 @@ class Set(expr):
 class SetComp(expr):
 	_fields = ('elt', 'generators')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(SetComp, self).__init__(parent)
 
 	def postinit(self, elt, generators):
@@ -929,7 +933,7 @@ class SetComp(expr):
 class Slice(slice):
 	_fields = ('lower', 'upper', 'step')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Slice, self).__init__(parent)
 
 	def postinit(self, lower, upper, step):
@@ -941,7 +945,7 @@ class Slice(slice):
 class Store(expr_context):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Store, self).__init__(parent)
 
 	def postinit(self):
@@ -951,7 +955,7 @@ class Store(expr_context):
 class Str(expr):
 	_fields = ('s',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Str, self).__init__(parent)
 
 	def postinit(self, s):
@@ -961,7 +965,7 @@ class Str(expr):
 class Sub(operator):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Sub, self).__init__(parent)
 
 	def postinit(self):
@@ -971,7 +975,7 @@ class Sub(operator):
 class Subscript(expr):
 	_fields = ('value', 'slice', 'ctx')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Subscript, self).__init__(parent)
 
 	def postinit(self, value, slice, ctx):
@@ -983,7 +987,7 @@ class Subscript(expr):
 class Suite(mod):
 	_fields = ('body',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Suite, self).__init__(parent)
 
 	def postinit(self, body):
@@ -993,7 +997,7 @@ class Suite(mod):
 class TryExcept(stmt):
 	_fields = ('body', 'handlers', 'orelse')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(TryExcept, self).__init__(parent)
 
 	def postinit(self, body, handlers, orelse):
@@ -1005,7 +1009,7 @@ class TryExcept(stmt):
 class TryFinally(stmt):
 	_fields = ('body', 'finalbody')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(TryFinally, self).__init__(parent)
 
 	def postinit(self, body, finalbody):
@@ -1016,7 +1020,7 @@ class TryFinally(stmt):
 class Tuple(expr):
 	_fields = ('elts', 'ctx')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Tuple, self).__init__(parent)
 
 	def postinit(self, elts, ctx):
@@ -1027,7 +1031,7 @@ class Tuple(expr):
 class UAdd(unaryop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(UAdd, self).__init__(parent)
 
 	def postinit(self):
@@ -1037,7 +1041,7 @@ class UAdd(unaryop):
 class USub(unaryop):
 	_fields = ()
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(USub, self).__init__(parent)
 
 	def postinit(self):
@@ -1047,7 +1051,7 @@ class USub(unaryop):
 class UnaryOp(expr):
 	_fields = ('op', 'operand')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(UnaryOp, self).__init__(parent)
 
 	def postinit(self, op, operand):
@@ -1058,7 +1062,7 @@ class UnaryOp(expr):
 class While(stmt):
 	_fields = ('test', 'body', 'orelse')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(While, self).__init__(parent)
 
 	def postinit(self, test, body, orelse):
@@ -1070,7 +1074,7 @@ class While(stmt):
 class With(stmt):
 	_fields = ('context_expr', 'optional_vars', 'body')
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(With, self).__init__(parent)
 
 	def postinit(self, context_expr, optional_vars, body):
@@ -1082,9 +1086,8 @@ class With(stmt):
 class Yield(expr):
 	_fields = ('value',)
 
-	def __init__(self, parent):
+	def __init__(self, parent=None):
 		super(Yield, self).__init__(parent)
 
 	def postinit(self, value):
 		self.value = value
-

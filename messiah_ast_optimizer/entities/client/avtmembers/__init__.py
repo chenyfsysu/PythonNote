@@ -1,4 +1,5 @@
+# -*- coding:utf-8 -*-
+
+
 def importall():
-	return (
-		__import__("impPokemon", globals())
-	)
+    return __import__('impPokemon', globals())

@@ -10,22 +10,28 @@ from collections import defaultdict
 
 class VisitorMeta(type):
 	def __new__(mcls, name, bases, attrs):
+		previsitors = defaultdict(list)
 		visitors = defaultdict(list)
-		fullvisitors = defaultdict(list)
+		postvisitors = defaultdict(list)
 		for base in bases:
+			base_previsitors = getattr(base, '_previsitors', None)
+			base_previsitors and previsitors.update(base_previsitors)
 			base_visitors = getattr(base, '_visitors', None)
 			base_visitors and visitors.update(base._visitors)
-			base_fullvisitors = getattr(base, '_fullvisitors', None)
-			base_fullvisitors and fullvisitors.update(base._fullvisitors)
+			base_postvisitors = getattr(base, '_postvisitors', None)
+			base_postvisitors and postvisitors.update(base._postvisitors)
 
 		for key, func in attrs.iteritems():
-			if key.startswith('visit_'):
+			if key.startswith('previsit_'):
+				previsitors[key].append(key)
+			elif key.startswith('visit_'):
 				visitors[key].append(key)
-			elif key.startswith('fullvisit_'):
-				fullvisitors[key].append(key)
+			elif key.startswith('postvisit_'):
+				postvisitors[key].append(key)
 
+		attrs['_previsitors'] = previsitors
 		attrs['_visitors'] = visitors
-		attrs['_fullvisitors'] = fullvisitors
+		attrs['_postvisitors'] = postvisitors
 
 		return super(VisitorMeta, mcls).__new__(mcls, name, bases, attrs)
 
@@ -49,42 +55,108 @@ class IVisitor(object):
 		pass
 
 
-class NodeVisitor(IVisitor, ast.NodeVisitor):
-	def __init__(self):
+class IHostVisitor(object):
+	__metaclass__ = VisitorMeta
+
+	def __init__(self, rootpath):
+		super(IHostVisitor, self).__init__()
+		self.rootpath = rootpath
+
+		self.previsitors = defaultdict(list)
 		self.visitors = defaultdict(list)
-		self.fullvisitors = defaultdict(list)
 		self.postvisitors = defaultdict(list)
+		self.raw_visitors = []
 
-	def previsit(self, node):
-		visitor = getattr(self, 'previsit_%s' % node.__class__.__name__, self._preVisit)
+	def walk(self):
+		raise NotImplementedError
 
-	def _preVisit(self, node):
-		cls = getattr(nodes, node.__class__.__name__)
-		return cls()
+	def activate(self, visitors):
+		self.raw_visitors = visitors
+		map(self.register, visitors)
 
-	def visit(self, node, *args):
-		for visitor in self.visitors.get(key, ()):
+	def register(self, visitor):
+		for func in visitor._previsitors:
+			key = func[9:]
+			method = getattr(visitor, func)
+			self.previsitors[key].append(method)
+
+		for func in visitor._visitors:
+			key = func[6:]
+			method = getattr(visitor, func)
+			self.visitors[key].append(method)
+
+		for func in visitor._postvisitors:
+			key = func[10:]
+			method = getattr(visitor, func)
+			self.postvisitors[key].append(method)
+
+	def previsit(self, key, *args):
+		for visitor in self.previsitors.get(key, ()):
 			visitor(*args)
 
-	def postvisit(self, node):
+	def visit(self, key, node, *args):
+		for visitor in self.visitors.get(key, ()):
+			node = visitor(node, *args)
+
+		return node
+
+	def postvisit(self, key, *args):
 		for visitor in self.postvisitors.get(key, ()):
 			visitor(*args)
 
+
+	def notifyEnter(self):
+		for visitor in self.raw_visitors:
+			visitor.onEnter()
+
+	def notifyExit(self):
+		for visitor in self.raw_visitors:
+			visitor.onExit()
+
+	def notifyVisitFile(self, fullpath, relpath):
+		for visitor in self.raw_visitors:
+			visitor.onVisitFile(fullpath, relpath)
+
+	def notifyLeaveFile(self, fullpath, relpath):
+		for visitor in self.raw_visitors:
+			visitor.onLeaveFile(fullpath, relpath)
+
+
+class AstVisitor(IVisitor, ast.NodeVisitor):
+	pass
+
+
+class AstHostVisitor(IHostVisitor):
+
+	def prebuild(self, rnode):
+		visitor = getattr(self, 'prebuild_%s' % rnode.__class__.__name__, self._prebuild)
+		return visitor(rnode)
+
+	def _prebuild(self, rnode):
+		cls = getattr(nodes, rnode.__class__.__name__)
+		return cls()
+
+	def postbuild(self, node):
+		visitor = getattr(self, 'postbuild_%s' % node.__class__.__name__, self._postbuild)
+		return visitor(node)
+
+	def _postbuild(self, node, *args):
+		pass
+
 	def fullvisit(self, node):
-		for visitor in self.fullvisitors.get(key, ()):
-			visitor(*args)
+		visitor = getattr(self, 'fullvisit_%s' % node.__class__.__name__)
+		return visitor(node)
 
 
 class MessiahStepTokenizer(IVisitor):
 	pass
 
 
-class MessiahStepVisitor(NodeVisitor):
+class MessiahStepVisitor(AstVisitor):
 	pass
 
 
-
-class MessiahStepTransformer(NodeVisitor):
+class MessiahStepTransformer(AstVisitor):
 	pass
 
 

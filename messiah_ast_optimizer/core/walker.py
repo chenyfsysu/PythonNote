@@ -8,20 +8,17 @@ import nodes
 
 from collections import defaultdict
 from itertools import imap
-from base import NodeVisitor
+from base import AstHostVisitor, IHostVisitor
 from context import Frame, Namespace, TokenizeContext, AstContext
 from objects import ObjectAllocator, Object
 
 
-class PreBuildVisitor(NodeVisitor):
-
-
-
+class AstBuilderVisitor(object):
 	def previsit_ClassDef(self, node):
-		cls = getattr(nodes, node.__class__.__name__)
+		pass
 
 
-class ContextVisitor(BuilderVisitor):
+class AstContextVisitor(AstBuilderVisitor):
 
 	def visitDefinitionBlock(self, node):
 		context = self.context
@@ -31,7 +28,7 @@ class ContextVisitor(BuilderVisitor):
 		context.frames.append(Frame.create(node))
 		context.locals_stack.append(Namespace())
 		
-		node = self.genericVisit(node)
+		node = self.genericWalk(node)
 		context.frames.pop()
 		context.locals_stack.pop()
 
@@ -39,7 +36,7 @@ class ContextVisitor(BuilderVisitor):
 
 	def visitClosureBlock(self, node):
 		self.context.locals_stack.append(Namespace())
-		node = self.genericVisit(node)
+		node = self.genericWalk(node)
 		self.context.locals_stack.pop()
 
 		return node
@@ -50,7 +47,7 @@ class ContextVisitor(BuilderVisitor):
 	def fullvisit_Module(self, node):
 		self.context.frames.append(Frame.create(node))
 		self.context.locals_stack.append(Namespace())
-		return self.genericVisit(node)
+		return self.genericWalk(node)
 
 	def fullvisit_ClassDef(self, node):
 		return self.visitDefinitionBlock(node)
@@ -73,28 +70,28 @@ class ContextVisitor(BuilderVisitor):
 	def fullvisit_Lambda(self, node):
 		return  self.visitClosureBlock(node)
 
-	def visit_Assign(self, node):
+	def postvisit_Assign(self, node):
 		self.visitDefinition(node)
 		return node
 
-	def visit_AugAssign(self, node):
+	def postvisit_AugAssign(self, node):
 		if isinstance(node.target, ast.Name):
 			name = node.target.id
 			self.context.store(name, Object(name, None))
 		return node
 
-	def visit_For(self, node):
+	def postvisit_For(self, node):
 		return node
 
-	def visit_Import(self, node):
+	def postvisit_Import(self, node):
 		self.visitDefinition(node)
 		return node
 
-	def visit_ImportFrom(self, node):
+	def postvisit_ImportFrom(self, node):
 		self.visitDefinition(node)
 		return node
 
-	def visit_Delete(self, node):
+	def postvisit_Delete(self, node):
 		locals_attr = self.context.locals
 		for target in node.targets:
 			if isinstance(target, ast.Name) and target.id in locals_attr:
@@ -102,63 +99,7 @@ class ContextVisitor(BuilderVisitor):
 		return node
 
 
-class Walker(object):
-	def __init__(self, rootpath):
-		self.rootpath = rootpath
-		self.raw_visitors = []
-		self.visitors = defaultdict(list)
-		self.fullvisitors = defaultdict(list)
-
-	def activate(self, visitors):
-		self.raw_visitors = visitors
-		map(self.register, visitors)
-
-	def register(self, visitor):
-		for func in visitor._visitors:
-			key = func[6:]
-			method = getattr(visitor, func)
-			self.visitors[key].append(method)
-
-		for func in visitor._fullvisitors:
-			key = func[10:]
-			method = getattr(visitor, func)
-			self.fullvisitors[key].append(method)
-
-	def walk(self):
-		raise NotImplementedError
-
-	def dispatch(self, key, *args):
-		if key not in self.visitors:
-			return
-
-		for visitor in self.visitors[key]:
-			visitor(*args)
-
-	def dispatchFull(self, key, *args):
-		if key not in self.fullvisitors:
-			return
-
-		for visitor in self.fullvisitors[key]:
-			visitor(*args)
-
-	def notifyEnter(self):
-		for visitor in self.raw_visitors:
-			visitor.onEnter()
-
-	def notifyExit(self):
-		for visitor in self.raw_visitors:
-			visitor.onExit()
-
-	def notifyVisitFile(self, fullpath, relpath):
-		for visitor in self.raw_visitors:
-			visitor.onVisitFile(fullpath, relpath)
-
-	def notifyLeaveFile(self, fullpath, relpath):
-		for visitor in self.raw_visitors:
-			visitor.onLeaveFile(fullpath, relpath)
-
-
-class TokenizeWalker(Walker):
+class TokenizeWalker(IHostVisitor):
 	TokenMapping = {
 		tokenize.COMMENT: 'Comment'
 	}
@@ -180,60 +121,50 @@ class TokenizeWalker(Walker):
 		if type not in self.TokenMapping:
 			return
 		key = self.TokenMapping[type]
-		self.dispatch(key, token, srow_scol, erow_ecol, line, self.context)
+		self.visit(key, token, srow_scol, erow_ecol, line, self.context)
 
 
-class VisitWalker(Walker, ContextVisitor):
+class VisitWalker(AstHostVisitor, AstContextVisitor):
 	def __init__(self, rootpath):
 		super(VisitWalker, self).__init__(rootpath)
 		self.context = None
 		self.selfvisitors = defaultdict(list)
-		self.registerSelf()
-
-	def registerSelf(self):
-		for func in self._visitors:
-			key = func[6:]
-			method = getattr(self, func)
-			self.selfvisitors[key].append(method)
-
-		for func in self._fullvisitors:
-			key = func[10:]
-			method = getattr(self, func)
-			self.fullvisitors[key].append(method)
+		self.register(self)
 
 	def walk(self, fullpath, relpath):
 		self.notifyVisitFile(fullpath, relpath)
 
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 		tree = ast.parse(open(fullpath).read())
-		tree = self.visit(tree)
+		tree = self._walk(tree)
 
 		self.notifyLeaveFile(fullpath, relpath)
 		return tree
 
-	def visit(self, node):
+	def _walk(self, node):
+		node = self.prebuild(node)
+
 		key = node.__class__.__name__
-		if key in self.fullvisitors:
-			self.dispatchFull(key, node)
+		if hasattr(self, 'fullvisit_%s' % key):
+			self.fullvisit(node)
 		else:
-			self.genericVisit(node)
+			self.genericWalk(node)
 
-		self.dispatch(key, node, self.context)
-
-		if key in self.selfvisitors:
-			for visitor in self.selfvisitors[key]:
-				visitor(node)
+		self.previsit(key, node, self.context)
+		self.visit(key, node, self.context)
+		self.postvisit(key, node, self.context)
 
 		return node
 
-	def genericVisit(self, node):
-		for field, value in ast.iter_fields(node):
+	def genericWalk(self, node):
+		for field in node._fields:
+			value = getattr(node, field)
 			if isinstance(value, list):
 				for item in value:
 					if isinstance(item, ast.AST):
-						self.visit(item)
+						self._walk(item)
 			elif isinstance(value, ast.AST):
-				self.visit(value)
+				self._walk(value)
 
 		return node
 
@@ -242,34 +173,26 @@ class TransformWalker(VisitWalker):
 	def __init__(self, rootpath):
 		super(TransformWalker, self).__init__(rootpath)
 
-	def visit(self, node):
+	def _walk(self, node):
 		key = node.__class__.__name__
-		if key in self.fullvisitors:
-			visitors = self.fullvisitors[key]
-			for visitor in visitors:
-				node = visitor(node)
+		if hasattr(self, 'fullvisit_%s' % key):
+			node = self.fullvisit(node)
 		else:
-			node = self.generalVisit(node)
+			node = self.genericWalk(node)
 
-
-		if key in self.visitors:
-			for visitor in self.visitors[key]:
-				node = visitor(node, self.context)
-
-		if key in self.selfvisitors:
-			for visitor in self.selfvisitors[key]:
-				visitor(node)
-
+		self.previsit(key, node, self.context)
+		node = self.visit(key, node, self.context)
+		self.postvisit(key, node, self.context)
 		return node
 
-	def generalVisit(self, node):
-		for field, old_value in ast.iter_fields(node):
-			old_value = getattr(node, field, None)
+	def genericWalk(self, node):
+		for field in node._fields:
+			old_value = getattr(node, field)
 			if isinstance(old_value, list):
 				new_values = []
 				for value in old_value:
 					if isinstance(value, ast.AST):
-						value = self.visit(value)
+						value = self._walk(value)
 						if value is None:
 							continue
 						elif not isinstance(value, ast.AST):
@@ -278,7 +201,7 @@ class TransformWalker(VisitWalker):
 					new_values.append(value)
 				old_value[:] = new_values
 			elif isinstance(old_value, ast.AST):
-				new_node = self.visit(old_value)
+				new_node = self._walk(old_value)
 				if new_node is None:
 					delattr(node, field)
 				else:
