@@ -69,3 +69,8 @@ hotfix加工具
 
 # 問題在於@Optimize在Meta之後！！！
 #  
+
+
+1.改为使用astroid，确认两个问题
+1）怎样组织visitor， transformer
+2）import_module怎么指定

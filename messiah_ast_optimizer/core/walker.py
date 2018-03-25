@@ -4,6 +4,7 @@ import ast
 import utils
 import const
 import tokenize
+import nodes
 
 from collections import defaultdict
 from itertools import imap
@@ -12,7 +13,15 @@ from context import Frame, Namespace, TokenizeContext, AstContext
 from objects import ObjectAllocator, Object
 
 
-class ContextVisitor(NodeVisitor):
+class PreBuildVisitor(NodeVisitor):
+
+
+
+	def previsit_ClassDef(self, node):
+		cls = getattr(nodes, node.__class__.__name__)
+
+
+class ContextVisitor(BuilderVisitor):
 
 	def visitDefinitionBlock(self, node):
 		context = self.context

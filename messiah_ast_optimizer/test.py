@@ -1,9 +1,3 @@
-class A(object):
-	def inner(self):
-		pass
+import _ast
 
-def func():
-	pass
-
-B = 1000
-del B
+print _ast.ListComp.__mro__
