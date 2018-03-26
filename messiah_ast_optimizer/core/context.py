@@ -30,7 +30,6 @@ import setting
 
 from collections import defaultdict
 from objects import ObjectAllocator, LazyImportObject
-from module_loader import ModuleLoader
 
 
 class Frame(object):
@@ -72,8 +71,6 @@ class AstContext(IContext):
 		self.globals = Namespace()
 
 		self.frames = []
-		self.loader = ModuleLoader(rootpath, setting.CLEINT_PATHS)
-		self.loader.initRoot(relpath)
 
 	def storeAll(self, vars):
 		"""store"""
@@ -99,11 +96,7 @@ class AstContext(IContext):
 		return val
 
 	def loadImport(self, val):
-		if not isinstance(val, LazyImportObject) or val.node:
-			return val
-
-		var = self.loader.load(val.module, val.fromlist, val.level)
-		return var
+		pass
 
 	@property
 	def locals(self):

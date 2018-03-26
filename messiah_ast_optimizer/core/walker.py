@@ -8,18 +8,18 @@ import nodes
 
 from collections import defaultdict
 from itertools import imap
-from base import AstHostVisitor, IHostVisitor
+from base import AstHostVisitor, HostVisitor, IVisitor
 from context import Frame, Namespace, TokenizeContext, AstContext
 from objects import ObjectAllocator, Object
+from module_loader import ModuleLoader
 
 
-class AstBuilderVisitor(object):
+class AstBuilderMixin(IVisitor):
 	def previsit_ClassDef(self, node):
 		pass
 
 
-class AstContextVisitor(AstBuilderVisitor):
-
+class AstContextMixin(IVisitor):
 	def visitDefinitionBlock(self, node):
 		context = self.context
 		definitions = ObjectAllocator.allocate(node)
@@ -91,7 +91,7 @@ class AstContextVisitor(AstBuilderVisitor):
 		self.visitDefinition(node)
 		return node
 
-	def postvisit_Delete(self, node):
+	def postvisit_Delete(self, node, context):
 		locals_attr = self.context.locals
 		for target in node.targets:
 			if isinstance(target, ast.Name) and target.id in locals_attr:
@@ -99,7 +99,7 @@ class AstContextVisitor(AstBuilderVisitor):
 		return node
 
 
-class TokenizeWalker(IHostVisitor):
+class TokenizeWalker(HostVisitor):
 	TokenMapping = {
 		tokenize.COMMENT: 'Comment'
 	}
@@ -124,7 +124,7 @@ class TokenizeWalker(IHostVisitor):
 		self.visit(key, token, srow_scol, erow_ecol, line, self.context)
 
 
-class VisitWalker(AstHostVisitor, AstContextVisitor):
+class VisitWalker(AstHostVisitor, AstBuilderMixin, AstContextMixin):
 	def __init__(self, rootpath):
 		super(VisitWalker, self).__init__(rootpath)
 		self.context = None
@@ -133,17 +133,16 @@ class VisitWalker(AstHostVisitor, AstContextVisitor):
 
 	def walk(self, fullpath, relpath):
 		self.notifyVisitFile(fullpath, relpath)
-
 		self.context = AstContext(self.rootpath, relpath, '__main__')
-		tree = ast.parse(open(fullpath).read())
-		tree.__postinit__
+
+		tree = ModuleLoader().reloadRoot(fullpath)
 		tree = self._walk(tree)
 
 		self.notifyLeaveFile(fullpath, relpath)
 		return tree
 
 	def _walk(self, node, parent=None):
-		node.__postinit__(parent)
+		parent and node.__postinit__(parent)
 
 		key = node.__class__.__name__
 		if hasattr(self, 'fullvisit_%s' % key):
@@ -151,9 +150,9 @@ class VisitWalker(AstHostVisitor, AstContextVisitor):
 		else:
 			self.genericWalk(node)
 
-		self.previsit(key, node, self.context)
+		self.previsit(key, node)
 		self.visit(key, node, self.context)
-		self.postvisit(key, node, self.context)
+		self.postvisit(key, node)
 
 		return node
 
@@ -175,7 +174,7 @@ class TransformWalker(VisitWalker):
 		super(TransformWalker, self).__init__(rootpath)
 
 	def _walk(self, node, parent=None):
-		node.__postinit__(parent)
+		parent and node.__postinit__(parent)
 
 		key = node.__class__.__name__
 		if hasattr(self, 'fullvisit_%s' % key):
@@ -183,9 +182,9 @@ class TransformWalker(VisitWalker):
 		else:
 			node = self.genericWalk(node)
 
-		self.previsit(key, node, self.context)
+		self.previsit(key, node)
 		node = self.visit(key, node, self.context)
-		self.postvisit(key, node, self.context)
+		self.postvisit(key, node)
 		return node
 
 	def genericWalk(self, node):

@@ -6,6 +6,8 @@
 import _ast
 import inspect
 
+from module_loader import ModuleLoader
+
 
 def dynamic_extend(cls):
 	def _dynamic_extend(klass):
@@ -374,6 +376,15 @@ class Mod(Node):
 class Module(Node):
 	def importModule(self, name, fromlist, level):
 		pass
+
+	def __postinit__(self, name, file, path):
+		Node.__postinit__.im_func(self, None)
+		self.__name__ = name
+		self.__file__ = file
+		self.__path__ = path
+
+	def root(self):
+		return self
 
 
 @dynamic_extend(_ast.Mult)

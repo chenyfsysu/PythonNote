@@ -38,6 +38,9 @@ class VisitorMeta(type):
 class IVisitor(object):
 	__metaclass__ = VisitorMeta
 
+
+class Visitor(IVisitor):
+
 	def __init__(self, optimizer=None):
 		self.optimizer = optimizer
 
@@ -54,11 +57,11 @@ class IVisitor(object):
 		pass
 
 
-class IHostVisitor(object):
+class HostVisitor(object):
 	__metaclass__ = VisitorMeta
 
 	def __init__(self, rootpath):
-		super(IHostVisitor, self).__init__()
+		super(HostVisitor, self).__init__()
 		self.rootpath = rootpath
 
 		self.previsitors = defaultdict(list)
@@ -121,18 +124,18 @@ class IHostVisitor(object):
 			visitor.onLeaveFile(fullpath, relpath)
 
 
-class AstVisitor(IVisitor, ast.NodeVisitor):
+class AstVisitor(Visitor, ast.NodeVisitor):
 	pass
 
 
-class AstHostVisitor(IHostVisitor):
+class AstHostVisitor(HostVisitor):
 
 	def fullvisit(self, node):
 		visitor = getattr(self, 'fullvisit_%s' % node.__class__.__name__)
 		return visitor(node)
 
 
-class MessiahStepTokenizer(IVisitor):
+class MessiahStepTokenizer(Visitor):
 	pass
 
 
