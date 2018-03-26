@@ -40,8 +40,9 @@ class Frame(object):
 
 	@classmethod
 	def create(kcls, node):
-		name = 'Module' if isinstance(node, ast.Module) else node.name
-		return kcls(name, node.__class__.__name__)
+		return kcls('Module', 'Module')
+		# name = 'Module' if isinstance(node, nodes.Module) else node.name
+		# return kcls(name, node.__class__.__name__)
 
 
 class Namespace(dict):

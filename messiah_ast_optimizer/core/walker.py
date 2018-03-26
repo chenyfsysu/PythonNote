@@ -136,13 +136,14 @@ class VisitWalker(AstHostVisitor, AstContextVisitor):
 
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 		tree = ast.parse(open(fullpath).read())
+		tree.__postinit__
 		tree = self._walk(tree)
 
 		self.notifyLeaveFile(fullpath, relpath)
 		return tree
 
-	def _walk(self, node):
-		node = self.prebuild(node)
+	def _walk(self, node, parent=None):
+		node.__postinit__(parent)
 
 		key = node.__class__.__name__
 		if hasattr(self, 'fullvisit_%s' % key):
@@ -158,13 +159,13 @@ class VisitWalker(AstHostVisitor, AstContextVisitor):
 
 	def genericWalk(self, node):
 		for field in node._fields:
-			value = getattr(node, field)
-			if isinstance(value, list):
-				for item in value:
+			cnode = getattr(node, field)
+			if isinstance(cnode, list):
+				for item in cnode:
 					if isinstance(item, ast.AST):
-						self._walk(item)
-			elif isinstance(value, ast.AST):
-				self._walk(value)
+						self._walk(item, parent=node)
+			elif isinstance(cnode, ast.AST):
+				self._walk(cnode, parent=node)
 
 		return node
 
@@ -173,7 +174,9 @@ class TransformWalker(VisitWalker):
 	def __init__(self, rootpath):
 		super(TransformWalker, self).__init__(rootpath)
 
-	def _walk(self, node):
+	def _walk(self, node, parent=None):
+		node.__postinit__(parent)
+
 		key = node.__class__.__name__
 		if hasattr(self, 'fullvisit_%s' % key):
 			node = self.fullvisit(node)
@@ -192,7 +195,7 @@ class TransformWalker(VisitWalker):
 				new_values = []
 				for value in old_value:
 					if isinstance(value, ast.AST):
-						value = self._walk(value)
+						value = self._walk(value, node)
 						if value is None:
 							continue
 						elif not isinstance(value, ast.AST):
@@ -201,7 +204,7 @@ class TransformWalker(VisitWalker):
 					new_values.append(value)
 				old_value[:] = new_values
 			elif isinstance(old_value, ast.AST):
-				new_node = self._walk(old_value)
+				new_node = self._walk(old_value, node)
 				if new_node is None:
 					delattr(node, field)
 				else:

@@ -1,1093 +1,536 @@
 # -*- coding:utf-8 -*-
+"""
+动态拓展原生AstNode
+"""
+
+import _ast
+import inspect
 
 
-class INode(object):
-	def __init__(self, parent):
+def dynamic_extend(cls):
+	def _dynamic_extend(klass):
+		for name, func in inspect.getmembers(klass, inspect.ismethod):
+			setattr(cls, name, func.im_func)
+
+	return _dynamic_extend
+
+
+class Node(object):
+
+	def __postinit__(self, parent):
 		self.parent = parent
 
-
-class alias(INode):
-	_fields = ('name', 'asname')
-
-	def __init__(self, parent=None):
-		super(alias, self).__init__(parent)
-
-	def postinit(self, name, asname):
-		self.name = name
-		self.asname = asname
+	def root(self):
+		return self.parent.root()
 
 
-class arguments(INode):
-	_fields = ('args', 'vararg', 'kwarg', 'defaults')
-
-	def __init__(self, parent=None):
-		super(arguments, self).__init__(parent)
-
-	def postinit(self, args, vararg, kwarg, defaults):
-		self.args = args
-		self.vararg = vararg
-		self.kwarg = kwarg
-		self.defaults = defaults
+@dynamic_extend(_ast.alias)
+class alias(Node):
+	pass
 
 
-class boolop(INode):
-	_fields = ()
+@dynamic_extend(_ast.arguments)
+class arguments(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(boolop, self).__init__(parent)
 
-	def postinit(self):
+@dynamic_extend(_ast.boolop)
+class boolop(Node):
+	pass
+
+
+@dynamic_extend(_ast.cmpop)
+class cmpop(Node):
+	pass
+
+
+@dynamic_extend(_ast.comprehension)
+class comprehension(Node):
+	pass
+
+
+@dynamic_extend(_ast.excepthandler)
+class excepthandler(Node):
+	pass
+
+
+@dynamic_extend(_ast.expr)
+class expr(Node):
+	pass
+
+
+@dynamic_extend(_ast.expr_context)
+class expr_context(Node):
+	pass
+
+
+@dynamic_extend(_ast.keyword)
+class keyword(Node):
+	pass
+
+
+@dynamic_extend(_ast.mod)
+class mod(Node):
+	pass
+
+
+@dynamic_extend(_ast.operator)
+class operator(Node):
+	pass
+
+
+@dynamic_extend(_ast.slice)
+class slice(Node):
+	pass
+
+
+@dynamic_extend(_ast.stmt)
+class stmt(Node):
+	pass
+
+
+@dynamic_extend(_ast.unaryop)
+class unaryop(Node):
+	pass
+
+
+@dynamic_extend(_ast.Add)
+class Add(Node):
+	pass
+
+
+@dynamic_extend(_ast.And)
+class And(Node):
+	pass
+
+
+@dynamic_extend(_ast.Assert)
+class Assert(Node):
+	pass
+
+
+@dynamic_extend(_ast.Assign)
+class Assign(Node):
+	pass
+
+
+@dynamic_extend(_ast.Attribute)
+class Attribute(Node):
+	pass
+
+
+@dynamic_extend(_ast.AugAssign)
+class AugAssign(Node):
+	pass
+
+
+@dynamic_extend(_ast.AugLoad)
+class AugLoad(Node):
+	pass
+
+
+@dynamic_extend(_ast.AugStore)
+class AugStore(Node):
+	pass
+
+
+@dynamic_extend(_ast.BinOp)
+class BinOp(Node):
+	pass
+
+
+@dynamic_extend(_ast.BitAnd)
+class BitAnd(Node):
+	pass
+
+
+@dynamic_extend(_ast.BitOr)
+class BitOr(Node):
+	pass
+
+
+@dynamic_extend(_ast.BitXor)
+class BitXor(Node):
+	pass
+
+
+@dynamic_extend(_ast.BoolOp)
+class BoolOp(Node):
+	pass
+
+
+@dynamic_extend(_ast.Break)
+class Break(Node):
+	pass
+
+
+@dynamic_extend(_ast.Call)
+class Call(Node):
+	pass
+
+
+@dynamic_extend(_ast.ClassDef)
+class ClassDef(Node):
+	def getMro(self):
 		pass
 
 
-class cmpop(INode):
-	_fields = ()
+@dynamic_extend(_ast.Compare)
+class Compare(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(cmpop, self).__init__(parent)
 
-	def postinit(self):
+@dynamic_extend(_ast.Continue)
+class Continue(Node):
+	pass
+
+
+@dynamic_extend(_ast.Del)
+class Del(Node):
+	pass
+
+
+@dynamic_extend(_ast.Delete)
+class Delete(Node):
+	pass
+
+
+@dynamic_extend(_ast.Dict)
+class Dict(Node):
+	pass
+
+
+@dynamic_extend(_ast.DictComp)
+class DictComp(Node):
+	pass
+
+
+@dynamic_extend(_ast.Div)
+class Div(Node):
+	pass
+
+
+@dynamic_extend(_ast.Ellipsis)
+class Ellipsis(Node):
+	pass
+
+
+@dynamic_extend(_ast.Eq)
+class Eq(Node):
+	pass
+
+
+@dynamic_extend(_ast.ExceptHandler)
+class ExceptHandler(Node):
+	pass
+
+
+@dynamic_extend(_ast.Exec)
+class Exec(Node):
+	pass
+
+
+@dynamic_extend(_ast.Expr)
+class Expr(Node):
+	pass
+
+
+@dynamic_extend(_ast.Expression)
+class Expression(Node):
+	pass
+
+
+@dynamic_extend(_ast.ExtSlice)
+class ExtSlice(Node):
+	pass
+
+
+@dynamic_extend(_ast.FloorDiv)
+class FloorDiv(Node):
+	pass
+
+
+@dynamic_extend(_ast.For)
+class For(Node):
+	pass
+
+
+@dynamic_extend(_ast.FunctionDef)
+class FunctionDef(Node):
+	pass
+
+
+@dynamic_extend(_ast.GeneratorExp)
+class GeneratorExp(Node):
+	pass
+
+
+@dynamic_extend(_ast.Global)
+class Global(Node):
+	pass
+
+
+@dynamic_extend(_ast.Gt)
+class Gt(Node):
+	pass
+
+
+@dynamic_extend(_ast.GtE)
+class GtE(Node):
+	pass
+
+
+@dynamic_extend(_ast.If)
+class If(Node):
+	pass
+
+
+@dynamic_extend(_ast.IfExp)
+class IfExp(Node):
+	pass
+
+
+@dynamic_extend(_ast.Import)
+class Import(Node):
+	pass
+
+
+@dynamic_extend(_ast.ImportFrom)
+class ImportFrom(Node):
+	pass
+
+
+@dynamic_extend(_ast.In)
+class In(Node):
+	pass
+
+
+@dynamic_extend(_ast.Index)
+class Index(Node):
+	pass
+
+
+@dynamic_extend(_ast.Interactive)
+class Interactive(Node):
+	pass
+
+
+@dynamic_extend(_ast.Invert)
+class Invert(Node):
+	pass
+
+
+@dynamic_extend(_ast.Is)
+class Is(Node):
+	pass
+
+
+@dynamic_extend(_ast.IsNot)
+class IsNot(Node):
+	pass
+
+
+@dynamic_extend(_ast.LShift)
+class LShift(Node):
+	pass
+
+
+@dynamic_extend(_ast.Lambda)
+class Lambda(Node):
+	pass
+
+
+@dynamic_extend(_ast.List)
+class List(Node):
+	pass
+
+
+@dynamic_extend(_ast.ListComp)
+class ListComp(Node):
+	pass
+
+
+@dynamic_extend(_ast.Load)
+class Load(Node):
+	pass
+
+
+@dynamic_extend(_ast.Lt)
+class Lt(Node):
+	pass
+
+
+@dynamic_extend(_ast.LtE)
+class LtE(Node):
+	pass
+
+
+@dynamic_extend(_ast.Mod)
+class Mod(Node):
+	pass
+
+
+@dynamic_extend(_ast.Module)
+class Module(Node):
+	def importModule(self, name, fromlist, level):
 		pass
 
 
-class comprehension(INode):
-	_fields = ('target', 'iter', 'ifs')
+@dynamic_extend(_ast.Mult)
+class Mult(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(comprehension, self).__init__(parent)
 
-	def postinit(self, target, iter, ifs):
-		self.target = target
-		self.iter = iter
-		self.ifs = ifs
+@dynamic_extend(_ast.Name)
+class Name(Node):
+	pass
 
 
-class excepthandler(INode):
-	_fields = ()
+@dynamic_extend(_ast.Not)
+class Not(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(excepthandler, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.NotEq)
+class NotEq(Node):
+	pass
 
 
-class expr(INode):
-	_fields = ()
+@dynamic_extend(_ast.NotIn)
+class NotIn(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(expr, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Num)
+class Num(Node):
+	pass
 
 
-class expr_context(INode):
-	_fields = ()
+@dynamic_extend(_ast.Or)
+class Or(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(expr_context, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Param)
+class Param(Node):
+	pass
 
 
-class keyword(INode):
-	_fields = ('arg', 'value')
+@dynamic_extend(_ast.Pass)
+class Pass(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(keyword, self).__init__(parent)
 
-	def postinit(self, arg, value):
-		self.arg = arg
-		self.value = value
+@dynamic_extend(_ast.Pow)
+class Pow(Node):
+	pass
 
 
-class mod(INode):
-	_fields = ()
+@dynamic_extend(_ast.Print)
+class Print(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(mod, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.RShift)
+class RShift(Node):
+	pass
 
 
-class operator(INode):
-	_fields = ()
+@dynamic_extend(_ast.Raise)
+class Raise(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(operator, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Repr)
+class Repr(Node):
+	pass
 
 
-class slice(INode):
-	_fields = ()
+@dynamic_extend(_ast.Return)
+class Return(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(slice, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Set)
+class Set(Node):
+	pass
 
 
-class stmt(INode):
-	_fields = ()
+@dynamic_extend(_ast.SetComp)
+class SetComp(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(stmt, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Slice)
+class Slice(Node):
+	pass
 
 
-class unaryop(INode):
-	_fields = ()
+@dynamic_extend(_ast.Store)
+class Store(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(unaryop, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Str)
+class Str(Node):
+	pass
 
 
-class Add(operator):
-	_fields = ()
+@dynamic_extend(_ast.Sub)
+class Sub(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(Add, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.Subscript)
+class Subscript(Node):
+	pass
 
 
-class And(boolop):
-	_fields = ()
+@dynamic_extend(_ast.Suite)
+class Suite(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(And, self).__init__(parent)
 
-	def postinit(self):
-		pass
+@dynamic_extend(_ast.TryExcept)
+class TryExcept(Node):
+	pass
 
 
-class Assert(stmt):
-	_fields = ('test', 'msg')
+@dynamic_extend(_ast.TryFinally)
+class TryFinally(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(Assert, self).__init__(parent)
 
-	def postinit(self, test, msg):
-		self.test = test
-		self.msg = msg
+@dynamic_extend(_ast.Tuple)
+class Tuple(Node):
+	pass
 
 
-class Assign(stmt):
-	_fields = ('targets', 'value')
+@dynamic_extend(_ast.UAdd)
+class UAdd(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(Assign, self).__init__(parent)
 
-	def postinit(self, targets, value):
-		self.targets = targets
-		self.value = value
+@dynamic_extend(_ast.USub)
+class USub(Node):
+	pass
 
 
-class Attribute(expr):
-	_fields = ('value', 'attr', 'ctx')
+@dynamic_extend(_ast.UnaryOp)
+class UnaryOp(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(Attribute, self).__init__(parent)
 
-	def postinit(self, value, attr, ctx):
-		self.value = value
-		self.attr = attr
-		self.ctx = ctx
+@dynamic_extend(_ast.While)
+class While(Node):
+	pass
 
 
-class AugAssign(stmt):
-	_fields = ('target', 'op', 'value')
+@dynamic_extend(_ast.With)
+class With(Node):
+	pass
 
-	def __init__(self, parent=None):
-		super(AugAssign, self).__init__(parent)
 
-	def postinit(self, target, op, value):
-		self.target = target
-		self.op = op
-		self.value = value
-
-
-class AugLoad(expr_context):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(AugLoad, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class AugStore(expr_context):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(AugStore, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class BinOp(expr):
-	_fields = ('left', 'op', 'right')
-
-	def __init__(self, parent=None):
-		super(BinOp, self).__init__(parent)
-
-	def postinit(self, left, op, right):
-		self.left = left
-		self.op = op
-		self.right = right
-
-
-class BitAnd(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(BitAnd, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class BitOr(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(BitOr, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class BitXor(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(BitXor, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class BoolOp(expr):
-	_fields = ('op', 'values')
-
-	def __init__(self, parent=None):
-		super(BoolOp, self).__init__(parent)
-
-	def postinit(self, op, values):
-		self.op = op
-		self.values = values
-
-
-class Break(stmt):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Break, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Call(expr):
-	_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
-
-	def __init__(self, parent=None):
-		super(Call, self).__init__(parent)
-
-	def postinit(self, func, args, keywords, starargs, kwargs):
-		self.func = func
-		self.args = args
-		self.keywords = keywords
-		self.starargs = starargs
-		self.kwargs = kwargs
-
-
-class ClassDef(stmt):
-	_fields = ('name', 'bases', 'body', 'decorator_list')
-
-	def __init__(self, parent=None):
-		super(ClassDef, self).__init__(parent)
-
-	def postinit(self, name, bases, body, decorator_list):
-		self.name = name
-		self.bases = bases
-		self.body = body
-		self.decorator_list = decorator_list
-
-
-class Compare(expr):
-	_fields = ('left', 'ops', 'comparators')
-
-	def __init__(self, parent=None):
-		super(Compare, self).__init__(parent)
-
-	def postinit(self, left, ops, comparators):
-		self.left = left
-		self.ops = ops
-		self.comparators = comparators
-
-
-class Continue(stmt):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Continue, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Del(expr_context):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Del, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Delete(stmt):
-	_fields = ('targets',)
-
-	def __init__(self, parent=None):
-		super(Delete, self).__init__(parent)
-
-	def postinit(self, targets):
-		self.targets = targets
-
-
-class Dict(expr):
-	_fields = ('keys', 'values')
-
-	def __init__(self, parent=None):
-		super(Dict, self).__init__(parent)
-
-	def postinit(self, keys, values):
-		self.keys = keys
-		self.values = values
-
-
-class DictComp(expr):
-	_fields = ('key', 'value', 'generators')
-
-	def __init__(self, parent=None):
-		super(DictComp, self).__init__(parent)
-
-	def postinit(self, key, value, generators):
-		self.key = key
-		self.value = value
-		self.generators = generators
-
-
-class Div(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Div, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Ellipsis(slice):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Ellipsis, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Eq(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Eq, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class ExceptHandler(excepthandler):
-	_fields = ('type', 'name', 'body')
-
-	def __init__(self, parent=None):
-		super(ExceptHandler, self).__init__(parent)
-
-	def postinit(self, type, name, body):
-		self.type = type
-		self.name = name
-		self.body = body
-
-
-class Exec(stmt):
-	_fields = ('body', 'globals', 'locals')
-
-	def __init__(self, parent=None):
-		super(Exec, self).__init__(parent)
-
-	def postinit(self, body, globals, locals):
-		self.body = body
-		self.globals = globals
-		self.locals = locals
-
-
-class Expr(stmt):
-	_fields = ('value',)
-
-	def __init__(self, parent=None):
-		super(Expr, self).__init__(parent)
-
-	def postinit(self, value):
-		self.value = value
-
-
-class Expression(mod):
-	_fields = ('body',)
-
-	def __init__(self, parent=None):
-		super(Expression, self).__init__(parent)
-
-	def postinit(self, body):
-		self.body = body
-
-
-class ExtSlice(slice):
-	_fields = ('dims',)
-
-	def __init__(self, parent=None):
-		super(ExtSlice, self).__init__(parent)
-
-	def postinit(self, dims):
-		self.dims = dims
-
-
-class FloorDiv(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(FloorDiv, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class For(stmt):
-	_fields = ('target', 'iter', 'body', 'orelse')
-
-	def __init__(self, parent=None):
-		super(For, self).__init__(parent)
-
-	def postinit(self, target, iter, body, orelse):
-		self.target = target
-		self.iter = iter
-		self.body = body
-		self.orelse = orelse
-
-
-class FunctionDef(stmt):
-	_fields = ('name', 'args', 'body', 'decorator_list')
-
-	def __init__(self, parent=None):
-		super(FunctionDef, self).__init__(parent)
-
-	def postinit(self, name, args, body, decorator_list):
-		self.name = name
-		self.args = args
-		self.body = body
-		self.decorator_list = decorator_list
-
-
-class GeneratorExp(expr):
-	_fields = ('elt', 'generators')
-
-	def __init__(self, parent=None):
-		super(GeneratorExp, self).__init__(parent)
-
-	def postinit(self, elt, generators):
-		self.elt = elt
-		self.generators = generators
-
-
-class Global(stmt):
-	_fields = ('names',)
-
-	def __init__(self, parent=None):
-		super(Global, self).__init__(parent)
-
-	def postinit(self, names):
-		self.names = names
-
-
-class Gt(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Gt, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class GtE(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(GtE, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class If(stmt):
-	_fields = ('test', 'body', 'orelse')
-
-	def __init__(self, parent=None):
-		super(If, self).__init__(parent)
-
-	def postinit(self, test, body, orelse):
-		self.test = test
-		self.body = body
-		self.orelse = orelse
-
-
-class IfExp(expr):
-	_fields = ('test', 'body', 'orelse')
-
-	def __init__(self, parent=None):
-		super(IfExp, self).__init__(parent)
-
-	def postinit(self, test, body, orelse):
-		self.test = test
-		self.body = body
-		self.orelse = orelse
-
-
-class Import(stmt):
-	_fields = ('names',)
-
-	def __init__(self, parent=None):
-		super(Import, self).__init__(parent)
-
-	def postinit(self, names):
-		self.names = names
-
-
-class ImportFrom(stmt):
-	_fields = ('module', 'names', 'level')
-
-	def __init__(self, parent=None):
-		super(ImportFrom, self).__init__(parent)
-
-	def postinit(self, module, names, level):
-		self.module = module
-		self.names = names
-		self.level = level
-
-
-class In(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(In, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Index(slice):
-	_fields = ('value',)
-
-	def __init__(self, parent=None):
-		super(Index, self).__init__(parent)
-
-	def postinit(self, value):
-		self.value = value
-
-
-class Interactive(mod):
-	_fields = ('body',)
-
-	def __init__(self, parent=None):
-		super(Interactive, self).__init__(parent)
-
-	def postinit(self, body):
-		self.body = body
-
-
-class Invert(unaryop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Invert, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Is(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Is, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class IsNot(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(IsNot, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class LShift(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(LShift, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Lambda(expr):
-	_fields = ('args', 'body')
-
-	def __init__(self, parent=None):
-		super(Lambda, self).__init__(parent)
-
-	def postinit(self, args, body):
-		self.args = args
-		self.body = body
-
-
-class List(expr):
-	_fields = ('elts', 'ctx')
-
-	def __init__(self, parent=None):
-		super(List, self).__init__(parent)
-
-	def postinit(self, elts, ctx):
-		self.elts = elts
-		self.ctx = ctx
-
-
-class ListComp(expr):
-	_fields = ('elt', 'generators')
-
-	def __init__(self, parent=None):
-		super(ListComp, self).__init__(parent)
-
-	def postinit(self, elt, generators):
-		self.elt = elt
-		self.generators = generators
-
-
-class Load(expr_context):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Load, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Lt(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Lt, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class LtE(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(LtE, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Mod(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Mod, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Module(mod):
-	_fields = ('body',)
-
-	def __init__(self, parent=None):
-		super(Module, self).__init__(parent)
-
-	def postinit(self, body):
-		self.body = body
-
-
-class Mult(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Mult, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Name(expr):
-	_fields = ('id', 'ctx')
-
-	def __init__(self, parent=None):
-		super(Name, self).__init__(parent)
-
-	def postinit(self, id, ctx):
-		self.id = id
-		self.ctx = ctx
-
-
-class Not(unaryop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Not, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class NotEq(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(NotEq, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class NotIn(cmpop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(NotIn, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Num(expr):
-	_fields = ('n',)
-
-	def __init__(self, parent=None):
-		super(Num, self).__init__(parent)
-
-	def postinit(self, n):
-		self.n = n
-
-
-class Or(boolop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Or, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Param(expr_context):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Param, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Pass(stmt):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Pass, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Pow(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Pow, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Print(stmt):
-	_fields = ('dest', 'values', 'nl')
-
-	def __init__(self, parent=None):
-		super(Print, self).__init__(parent)
-
-	def postinit(self, dest, values, nl):
-		self.dest = dest
-		self.values = values
-		self.nl = nl
-
-
-class RShift(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(RShift, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Raise(stmt):
-	_fields = ('type', 'inst', 'tback')
-
-	def __init__(self, parent=None):
-		super(Raise, self).__init__(parent)
-
-	def postinit(self, type, inst, tback):
-		self.type = type
-		self.inst = inst
-		self.tback = tback
-
-
-class Repr(expr):
-	_fields = ('value',)
-
-	def __init__(self, parent=None):
-		super(Repr, self).__init__(parent)
-
-	def postinit(self, value):
-		self.value = value
-
-
-class Return(stmt):
-	_fields = ('value',)
-
-	def __init__(self, parent=None):
-		super(Return, self).__init__(parent)
-
-	def postinit(self, value):
-		self.value = value
-
-
-class Set(expr):
-	_fields = ('elts',)
-
-	def __init__(self, parent=None):
-		super(Set, self).__init__(parent)
-
-	def postinit(self, elts):
-		self.elts = elts
-
-
-class SetComp(expr):
-	_fields = ('elt', 'generators')
-
-	def __init__(self, parent=None):
-		super(SetComp, self).__init__(parent)
-
-	def postinit(self, elt, generators):
-		self.elt = elt
-		self.generators = generators
-
-
-class Slice(slice):
-	_fields = ('lower', 'upper', 'step')
-
-	def __init__(self, parent=None):
-		super(Slice, self).__init__(parent)
-
-	def postinit(self, lower, upper, step):
-		self.lower = lower
-		self.upper = upper
-		self.step = step
-
-
-class Store(expr_context):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Store, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Str(expr):
-	_fields = ('s',)
-
-	def __init__(self, parent=None):
-		super(Str, self).__init__(parent)
-
-	def postinit(self, s):
-		self.s = s
-
-
-class Sub(operator):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(Sub, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class Subscript(expr):
-	_fields = ('value', 'slice', 'ctx')
-
-	def __init__(self, parent=None):
-		super(Subscript, self).__init__(parent)
-
-	def postinit(self, value, slice, ctx):
-		self.value = value
-		self.slice = slice
-		self.ctx = ctx
-
-
-class Suite(mod):
-	_fields = ('body',)
-
-	def __init__(self, parent=None):
-		super(Suite, self).__init__(parent)
-
-	def postinit(self, body):
-		self.body = body
-
-
-class TryExcept(stmt):
-	_fields = ('body', 'handlers', 'orelse')
-
-	def __init__(self, parent=None):
-		super(TryExcept, self).__init__(parent)
-
-	def postinit(self, body, handlers, orelse):
-		self.body = body
-		self.handlers = handlers
-		self.orelse = orelse
-
-
-class TryFinally(stmt):
-	_fields = ('body', 'finalbody')
-
-	def __init__(self, parent=None):
-		super(TryFinally, self).__init__(parent)
-
-	def postinit(self, body, finalbody):
-		self.body = body
-		self.finalbody = finalbody
-
-
-class Tuple(expr):
-	_fields = ('elts', 'ctx')
-
-	def __init__(self, parent=None):
-		super(Tuple, self).__init__(parent)
-
-	def postinit(self, elts, ctx):
-		self.elts = elts
-		self.ctx = ctx
-
-
-class UAdd(unaryop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(UAdd, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class USub(unaryop):
-	_fields = ()
-
-	def __init__(self, parent=None):
-		super(USub, self).__init__(parent)
-
-	def postinit(self):
-		pass
-
-
-class UnaryOp(expr):
-	_fields = ('op', 'operand')
-
-	def __init__(self, parent=None):
-		super(UnaryOp, self).__init__(parent)
-
-	def postinit(self, op, operand):
-		self.op = op
-		self.operand = operand
-
-
-class While(stmt):
-	_fields = ('test', 'body', 'orelse')
-
-	def __init__(self, parent=None):
-		super(While, self).__init__(parent)
-
-	def postinit(self, test, body, orelse):
-		self.test = test
-		self.body = body
-		self.orelse = orelse
-
-
-class With(stmt):
-	_fields = ('context_expr', 'optional_vars', 'body')
-
-	def __init__(self, parent=None):
-		super(With, self).__init__(parent)
-
-	def postinit(self, context_expr, optional_vars, body):
-		self.context_expr = context_expr
-		self.optional_vars = optional_vars
-		self.body = body
-
-
-class Yield(expr):
-	_fields = ('value',)
-
-	def __init__(self, parent=None):
-		super(Yield, self).__init__(parent)
-
-	def postinit(self, value):
-		self.value = value
+@dynamic_extend(_ast.Yield)
+class Yield(Node):
+	pass

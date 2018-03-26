@@ -3,7 +3,6 @@
 import ast
 import utils
 import const
-import nodes
 
 from collections import defaultdict
 
@@ -127,21 +126,6 @@ class AstVisitor(IVisitor, ast.NodeVisitor):
 
 
 class AstHostVisitor(IHostVisitor):
-
-	def prebuild(self, rnode):
-		visitor = getattr(self, 'prebuild_%s' % rnode.__class__.__name__, self._prebuild)
-		return visitor(rnode)
-
-	def _prebuild(self, rnode):
-		cls = getattr(nodes, rnode.__class__.__name__)
-		return cls()
-
-	def postbuild(self, node):
-		visitor = getattr(self, 'postbuild_%s' % node.__class__.__name__, self._postbuild)
-		return visitor(node)
-
-	def _postbuild(self, node, *args):
-		pass
 
 	def fullvisit(self, node):
 		visitor = getattr(self, 'fullvisit_%s' % node.__class__.__name__)
