@@ -71,9 +71,6 @@ hotfix加工具
 #  
 
 
-1.改为使用astroid，确认两个问题
-1）怎样组织visitor， transformer
-2）import_module怎么指定
-
-
-1)compiler.pycodegen->看下怎么根据astTree分析执行信息
+1. scope功能
+2. 根据name inferNode功能
+3. import和mro实现

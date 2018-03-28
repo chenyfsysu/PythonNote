@@ -25,28 +25,138 @@
 
 import ast
 import utils
-import const
-import setting
 
 from collections import defaultdict
+from itertools import imap
 from objects import ObjectAllocator, LazyImportObject
+from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN, NT_DUMP
+from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
 
 
-class Frame(object):
-	def __init__(self, name, type):
-		self.name = name
+class Scope(object):
+	def __init__(self, type, name, lookup):
 		self.type = type
+		self.name = name
+		self.lookup = lookup
 
-	@classmethod
-	def create(kcls, node):
-		return kcls('Module', 'Module')
-		# name = 'Module' if isinstance(node, nodes.Module) else node.name
-		# return kcls(name, node.__class__.__name__)
+	def identify(name):
+		return self.lookup.get(name, NT_UNKNOWN)
+
+	def __repr__(self):
+		return '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])
 
 
-class Namespace(dict):
-	def __init__(self):
-		super(Namespace, self).__init__()
+class FinderScope(object):
+	"""modify By inner module compiler.symbols"""
+
+	def __init__(self, type, name=''):
+		self.type = type
+		self.name = name
+		self.defs = {}
+		self.uses = {}
+		self.globals = {}
+		self.argvars = {}
+		self.freevars = {}
+		self.cellvars = {}
+		self.child_scope = []
+		self.nested = False
+		self.generator = False
+
+	def __repr__(self):
+		return """defs: %s\nuses: %s\nglobals: %s\nargvars: %s\nfreevars: %s \ncellvars: %s
+		""" % (self.defs, self.uses, self.globals, self.argvars, self.freevars, self.cellvars)
+
+	def dump(self):
+		names = self.defs.keys() + self.uses.keys() + self.globals.keys()
+		lookup = {name : self.identify(name) for name in names}
+		return Scope(self.type, self.name, lookup)
+
+	def addDef(self, name):
+		self.defs[name] = 1
+
+	def addUse(self, name):
+		self.uses[name] = 1
+
+	def addGlobal(self, name):
+		if name in self.uses or name in self.defs:
+			pass
+		if name in self.argvars:
+			raise SyntaxError, "%s in %s is global and parameter" % (name, self.name)
+		self.globals[name] = 1
+
+	def addArgvars(self, name):
+		self.defs[name] = 1
+		self.argvars[name] = 1
+
+	def getNames(self):
+		d = {}
+		imap(d.update, (self.defs, self.uses, self.globals))
+		return d.keys()
+
+	def addChildScope(self, scope):
+		self.child_scope.append(scope)
+
+	def addFreevars(self, names):
+		child_globals = []
+		for name in names:
+			sc = self.identify(name)
+			if self.nested:
+				if sc == NT_UNKNOWN or sc == NT_FREE or self.type == ST_CLASS:
+					self.freevars[name] = 1
+				elif sc == NT_GLOBAL_IMPLICIT:
+					child_globals.append(name)
+				elif self.type == ST_FUNCTION and sc == NT_LOCAL:
+					self.cellvars[name] = 1
+				elif sc != NT_CELL:
+					child_globals.append(name)
+			else:
+				if sc == NT_LOCAL:
+					self.cellvars[name] = 1
+				elif sc != NT_CELL:
+					child_globals.append(name)
+		return child_globals
+
+	def identify(self, name):
+		if name in self.globals:
+			return NT_GLOBAL_EXPLICIT
+		if name in self.cellvars:
+			return NT_CELL
+		if name in self.defs:
+			return NT_LOCAL
+		if self.nested and (name in self.freevars or name in self.uses):
+			return NT_FREE
+		if self.nested:
+			return NT_UNKNOWN
+		else:
+			return NT_GLOBAL_IMPLICIT
+
+	def getFreeVars(self):
+		if not self.nested:
+			return ()
+		freevars = {}
+		freevars.update(self.freevars)
+		for name in self.uses.keys():
+			if name not in self.defs and name not in self.globals:
+				freevars[name] = 1
+		return freevars.keys()
+
+	def getCellVars(self):
+		return self.cellvars.keys()
+
+	def updateFreevars(self):
+		for child in self.child_scope:
+			freevars = child.getFreeVars()
+			globals = self.addFreevars(freevars)
+			for name in globals:
+				child.forceGlobal(name)
+
+	def forceGlobal(self, name):
+		self.globals[name] = 1
+		if name in self.freevars:
+			del self.freevars[name]
+		for child in self.child_scope:
+			if child.identify(name) == NT_FREE:
+				child.forceGlobal(name)
 
 
 class IContext(object):
@@ -67,41 +177,11 @@ class AstContext(IContext):
 		super(AstContext, self).__init__(rootpath, relpath)
 		self.__name__ = name
 
-		self.locals_stack = []
-		self.globals = Namespace()
+		self.scopes = []
 
-		self.frames = []
-
-	def storeAll(self, vars):
-		"""store"""
-		self.locals.update(vars)
-		if self.frame.type == 'Module':
-			self.globals.update(vars)
-
-	def store(self, name, value):
-		"""store"""
-		self.locals[name] = value
-		if self.frame.type == ast.Module.__name__:
-			self.globals[name] = value
-
-	def load(self, name, lazy=True):
-		"""load"""
-		if name in self.locals:
-			val = self.locals[name]
-		else:
-			val = self.globals.get(name, None)
-		if val and not lazy:
-			val = self.loadImport(val)
-
-		return val
-
-	def loadImport(self, val):
-		pass
+	def load(self, name, lazy=False):
+		return None
 
 	@property
-	def locals(self):
-		return self.locals_stack[-1]
-
-	@property
-	def frame(self):
-		return self.frames[-1]
+	def scope(self):
+		return self.scopes[-1]

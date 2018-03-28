@@ -6,97 +6,118 @@ import const
 import tokenize
 import nodes
 
+from itertools import imap, izip
 from collections import defaultdict
-from itertools import imap
 from base import AstHostVisitor, HostVisitor, IVisitor
-from context import Frame, Namespace, TokenizeContext, AstContext
+from context import TokenizeContext, AstContext
 from objects import ObjectAllocator, Object
 from module_loader import ModuleLoader
+from finder import ScopeFinder
 
 
-class AstBuilderMixin(IVisitor):
-	def previsit_ClassDef(self, node):
+class AstConstantMixin(IVisitor):
+	def postvisit_Num(self, node):
+		node.assignConst(node.n)
+
+	def postvisit_Str(self, node):
+		node.assignConst(node.s)
+
+	def postvisit_Name(self, node):
+		node.id in const.BUILTIN_NAME and node.assignConst(utils.get_pure_constant(node))
+
+	def postvisit_Tuple(self, node):
+		if not isinstance(node.ctx, ast.Load):
+			return
+		if self._allEltsConstant(node.elts):
+			node.assignConst(tuple((elt.val for elt in node.elts)))
+
+	def postvisit_Set(self, node):
+		if not isinstance(node.ctx, ast.Load):
+			return
+		if self._allEltsConstant(node.elts):
+			node.assignConst({elt.val for elt in node.elts})
+
+	def postvisit_List(self, node):
+		if not isinstance(node.ctx, ast.Load):
+			return
+		if self._allEltsConstant(node.elts):
+			node.assignConst([elt.val for elt in node.elts])
+
+	def postvisit_Dict(self, node):
+		if self._allEltsConstant(node.keys) and self._allEltsConstant(node.values):
+			node.assignConst({k.val: v.val for k, v in izip(node.keys, node.values)})
+
+	def _allEltsConstant(self, elts):
+		return all((elt.is_constant for elt in elts))
+
+
+class AstDefMixin(IVisitor):
+	def storeDef(self):
 		pass
-
-
-class AstContextMixin(IVisitor):
-	def visitDefinitionBlock(self, node):
-		context = self.context
-		definitions = ObjectAllocator.allocate(node)
-		context.storeAll(definitions)
-
-		context.frames.append(Frame.create(node))
-		context.locals_stack.append(Namespace())
-		
-		node = self.genericWalk(node)
-		context.frames.pop()
-		context.locals_stack.pop()
-
-		return node
-
-	def visitClosureBlock(self, node):
-		self.context.locals_stack.append(Namespace())
-		node = self.genericWalk(node)
-		self.context.locals_stack.pop()
-
-		return node
 
 	def visitDefinition(self, node):
 		self.context.storeAll(ObjectAllocator.allocate(node))
 
-	def fullvisit_Module(self, node):
-		self.context.frames.append(Frame.create(node))
-		self.context.locals_stack.append(Namespace())
-		return self.genericWalk(node)
-
-	def fullvisit_ClassDef(self, node):
-		return self.visitDefinitionBlock(node)
-
-	def fullvisit_FunctionDef(self, node):
-		return self.visitDefinitionBlock(node)
-
-	def fullvisit_DictComp(self, node):
-		return self.visitClosureBlock(node)
-
-	def fullvisit_ListComp(self, node):
-		return self.visitClosureBlock(node)
-
-	def fullvisit_SetComp(self, node): 
-		return self.visitClosureBlock(node)
-
-	def fullvisit_GeneratorExp(self, node):
-		return self.visitClosureBlock(node)
-
-	def fullvisit_Lambda(self, node):
-		return  self.visitClosureBlock(node)
-
 	def postvisit_Assign(self, node):
-		self.visitDefinition(node)
 		return node
 
 	def postvisit_AugAssign(self, node):
 		if isinstance(node.target, ast.Name):
 			name = node.target.id
-			self.context.store(name, Object(name, None))
 		return node
 
 	def postvisit_For(self, node):
 		return node
 
 	def postvisit_Import(self, node):
-		self.visitDefinition(node)
 		return node
 
 	def postvisit_ImportFrom(self, node):
-		self.visitDefinition(node)
 		return node
 
 	def postvisit_Delete(self, node, context):
-		locals_attr = self.context.locals
-		for target in node.targets:
-			if isinstance(target, ast.Name) and target.id in locals_attr:
-				del locals_attr[target.id]
+		# locals_attr = self.context.locals
+		# for target in node.targets:
+		# 	if isinstance(target, ast.Name) and target.id in locals_attr:
+		# 		del locals_attr[target.id]
 		return node
+
+
+class AstScopeMixin(IVisitor):
+
+	def enterChildScope(self, node, name=''):
+		scope = AstScope(name)
+		self.context.scopes.append(scope)
+		node.setScope(scope)
+		node = self.genericWalk(node)
+		self.context.scopes.pop()
+
+		return node
+
+	def fullvisit_Module(self, node):
+		return self.enterChildScope(node)
+
+	def fullvisit_ClassDef(self, node):
+		return self.enterChildScope(node)
+
+	def fullvisit_FunctionDef(self, node):
+		print '11111111', node.scope
+		return self.enterChildScope(node)
+
+	def fullvisit_Lambda(self, node):
+		return self.enterChildScope(node)
+
+	def fullvisit_GeneratorExp(self, node):
+		return self.enterChildScope(node)
+
+	def previsit_ClassDef(self, node):
+		pass
+
+	def previsit_Name(self, node):
+		if isinstance(node.ctx, ast.Store):
+			self.context.scope.addDef(node.id)
+		else:
+			self.context.scope.addUse(node.id)
 
 
 class TokenizeWalker(HostVisitor):
@@ -124,7 +145,7 @@ class TokenizeWalker(HostVisitor):
 		self.visit(key, token, srow_scol, erow_ecol, line, self.context)
 
 
-class VisitWalker(AstHostVisitor, AstBuilderMixin, AstContextMixin):
+class VisitWalker(AstHostVisitor, AstConstantMixin, AstDefMixin):
 	def __init__(self, rootpath):
 		super(VisitWalker, self).__init__(rootpath)
 		self.context = None
@@ -136,6 +157,7 @@ class VisitWalker(AstHostVisitor, AstBuilderMixin, AstContextMixin):
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 
 		tree = ModuleLoader().reloadRoot(fullpath)
+		ScopeFinder().find(tree)
 		tree = self._walk(tree)
 
 		self.notifyLeaveFile(fullpath, relpath)

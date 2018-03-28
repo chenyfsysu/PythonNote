@@ -106,7 +106,6 @@ class HostVisitor(object):
 		for visitor in self.postvisitors.get(key, ()):
 			visitor(*args)
 
-
 	def notifyEnter(self):
 		for visitor in self.raw_visitors:
 			visitor.onEnter()

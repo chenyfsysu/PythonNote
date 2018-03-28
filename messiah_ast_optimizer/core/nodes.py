@@ -21,9 +21,40 @@ class Node(object):
 
 	def __postinit__(self, parent):
 		self.parent = parent
+		self.is_constant = False
 
-	def root(self):
-		return self.parent.root()
+	def module(self):
+		module = self
+		while module.parent:
+			module = module.parent
+
+		return module
+
+	def func(self):
+		f = self.parent
+		while f and not isinstance(f, ast.FunctionDef):
+			f = f.parent
+		return f
+
+	def cls(self):
+		c = self.parent
+		while c and not isinstance(c, ast.ClassDef):
+			c = c.parent
+		return c
+
+	def assignConst(self, val):
+		self.is_constant = True
+		self.val = val
+
+
+class ScopeNode(Node):
+	def __postinit__(self, parent):
+		Node.__postinit__.im_func(self, parent)
+		self.local_names = []  # locals
+		self.scope = None
+
+	def setScope(self, scope):
+		self.scope = scope
 
 
 @dynamic_extend(_ast.alias)
@@ -172,7 +203,7 @@ class Call(Node):
 
 
 @dynamic_extend(_ast.ClassDef)
-class ClassDef(Node):
+class ClassDef(ScopeNode):
 	def getMro(self):
 		pass
 
@@ -258,7 +289,7 @@ class For(Node):
 
 
 @dynamic_extend(_ast.FunctionDef)
-class FunctionDef(Node):
+class FunctionDef(ScopeNode):
 	pass
 
 
@@ -294,12 +325,25 @@ class IfExp(Node):
 
 @dynamic_extend(_ast.Import)
 class Import(Node):
-	pass
+	def __postinit__(self, parent):
+		Node.__postinit__.im_func(self, parent)
+
+		self.lookups = {alias.asname or alias.name: alias.name for alias in self.names}
+
+	def lookup(self, name):
+		name = self.lookups.get(name, '')
+		return self.module().importModule(name) if name else None
 
 
 @dynamic_extend(_ast.ImportFrom)
 class ImportFrom(Node):
-	pass
+	def __postinit__(self, parent):
+		Node.__postinit__.im_func(self, parent)
+		self.lookups = {alias.asname or alias.name: alias.name for alias in self.names}
+
+	def lookup(self, name):
+		name = self.lookups.get(name, '')
+		return self.module().importModule(self.module, fromlist=name, level=self.level)
 
 
 @dynamic_extend(_ast.In)
@@ -338,7 +382,7 @@ class LShift(Node):
 
 
 @dynamic_extend(_ast.Lambda)
-class Lambda(Node):
+class Lambda(ScopeNode):
 	pass
 
 
@@ -373,8 +417,8 @@ class Mod(Node):
 
 
 @dynamic_extend(_ast.Module)
-class Module(Node):
-	def importModule(self, name, fromlist, level):
+class Module(ScopeNode):
+	def importModule(self, name, fromlist=None, level=-1):
 		pass
 
 	def __postinit__(self, name, file, path):

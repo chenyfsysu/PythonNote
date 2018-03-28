@@ -43,7 +43,6 @@ class ConstantVisitor(MessiahStepVisitor):
 		self.optimizer and self.optimizer.storeData(self.__class__, self.constants)
 
 	def visit_Assign(self, node, context):
-		print '11111111', node.root()
 		if context.__relpath__  not in setting.INLINE_CONST_FILES:
 			return
 
