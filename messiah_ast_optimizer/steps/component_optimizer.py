@@ -31,14 +31,7 @@ class ComponentTransformer(MessiahStepTransformer):
 		self.merge_cls = {}
 
 	def visit_ClassDef(self, node, context):
-		# for deco in node.decorator_list:
-		# 	if isinstance(deco, ast.Call) and deco.func.id == 'Components':
-		# 		components = []
-		# 		for cls in deco.args:
-		# 			cls_node = context.load(cls.id, lazy=False)
-		# 			components.append([cls_node.node])
-		# 		node = core.classutils.merge_component([node], components)
-
+		print node.nBases()
 		return node
 
 	def visit_ImportFrom(self, node, context):

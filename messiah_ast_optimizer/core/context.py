@@ -43,6 +43,9 @@ class Scope(object):
 	def identify(name):
 		return self.lookup.get(name, NT_UNKNOWN)
 
+	def addLocals(self, name, node):
+		self.locals[name] = node
+
 	def __repr__(self):
 		msg = '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])
 		msg = '%s\n%s' % (msg, self.locals)

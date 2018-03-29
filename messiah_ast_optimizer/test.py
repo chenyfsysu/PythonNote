@@ -9,6 +9,8 @@
 # 		else:
 # 			print a
 # 	return wrapper
+
+
 t = [1, 2, 3]
 def ofunc():
 	mm = 1

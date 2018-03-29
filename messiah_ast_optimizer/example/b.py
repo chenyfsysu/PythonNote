@@ -4,3 +4,6 @@
 def func(self, x, y, *args):
     a = 1
     print b
+
+class B(object, ):
+    pass

@@ -222,7 +222,13 @@ class ClassDef(ScopeNode):
 		seqs = [seq.nMro() for seq in self.nBases() if seq]
 
 	def nBases(self):
-		pass
+		bases = []
+		for base in self.bases:
+			if isinstance(base, _ast.Name):
+				base.id != 'object' and bases.append(base.load())
+			elif isinstance(base, _ast.Attribute):
+				pass
+		return bases
 
 
 @dynamic_extend(_ast.Compare)
