@@ -20,6 +20,10 @@ def get_parent_dir(dir, level):
 	return os.path.abspath('%s%s' % (dir, '%s%s' % (os.path.sep, '..') * level))
 
 
+def is_parent_dir(parent, path):
+	return not os.path.relpath(path, parent).startswith(os.pardir)
+
+
 def get_lineno(node):
 	return getattr(node, 'lineno', -1)
 
@@ -108,15 +112,15 @@ def get_constant(node):
 	return value
  
 
-def get_pure_names(node):
+def get_names(node, pure_only=True):
 	if isinstance(node, ast.Name): 
 		return node.id
 
 	if isinstance(node, ast.Tuple):
 		names = []
 		for item in node.elts:
-			item_names = get_pure_names(item)
-			if not item_names:
+			item_names = get_names(item)
+			if pure_only and item_names is None:
 				return None
 			names.append(item_names)
 		return names
@@ -188,7 +192,8 @@ def topo_sort(verts, edges, relies=None):
 
 
 if __name__ == '__main__':
-	node = ast.parse('a, (b, (c, d)) = 1, (2, (3, (4, 5)))').body[0]
-	node = ast.parse('a, (b, (c, d)) = 1, (2, self.test())').body[0]
-	node = ast.parse('self.name = 1, 3').body[0]
-	print unpack_sequence(node.targets[0], node.value)
+	# node = ast.parse('a, (b, (c, d)) = 1, (2, (3, (4, 5)))').body[0]
+	# node = ast.parse('a, (b, (c, d)) = 1, (2, self.test())').body[0]
+	# node = ast.parse('self.name = 1, 3').body[0]
+	# print unpack_sequence(node.targets[0], node.value)
+	print is_parent_dir('client/common', 'client/common/Avatar/main.py')

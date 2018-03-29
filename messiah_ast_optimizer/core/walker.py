@@ -12,7 +12,6 @@ from base import AstHostVisitor, HostVisitor, IVisitor
 from context import TokenizeContext, AstContext
 from objects import ObjectAllocator, Object
 from module_loader import ModuleLoader
-from finder import ScopeFinder
 
 
 class AstConstantMixin(IVisitor):
@@ -156,8 +155,8 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstDefMixin):
 		self.notifyVisitFile(fullpath, relpath)
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 
+		ModuleLoader().setPath(['entities', 'entities/client', 'entities/common'])
 		tree = ModuleLoader().reloadRoot(fullpath)
-		ScopeFinder().find(tree)
 		tree = self._walk(tree)
 
 		self.notifyLeaveFile(fullpath, relpath)

@@ -10,7 +10,8 @@ import sys
 import imp
 import ast
 import utils
-from finder import AttributeFinder
+import exceptions
+from builder import ScopeBuilder
 
 
 class Singleton(object):
@@ -29,6 +30,7 @@ class ModuleLoader(Singleton):
 		self.root = None
 		self.path = []
 		self.modules = {}
+		self.builder = ScopeBuilder()
 
 	def setPath(self, path):
 		self.path = path
@@ -51,9 +53,10 @@ class ModuleLoader(Singleton):
 
 			m = ast.parse(open(file).read())
 			m.__postinit__(tail, file, path)
+			self.builder.build(m)
 			self.modules[tail] = m
 
-			if not tail:
+			if not self.root:
 				self.root = m
 
 		return self.root
@@ -61,7 +64,7 @@ class ModuleLoader(Singleton):
 	def getModuleName(self, path):
 		pname = ''
 		for p in self.path:
-			if path.startswith(p):
+			if utils.is_parent_dir(p, path):
 				name = os.path.relpath(path, p)
 				if not pname or pname.startswith(pname):
 					pname = name
@@ -79,6 +82,10 @@ class ModuleLoader(Singleton):
 		except ImportError as e:
 			print e
 			m = None
+		else:
+			if not fromlist:
+				return m
+			m = self.ensureFromlist(m, fromlist)
 
 		return m
 
@@ -87,10 +94,7 @@ class ModuleLoader(Singleton):
 		q, tail = self.loadHead(parent, name)
 		m = self.loadTail(q, tail)
 
-		if not fromlist:
-			return m
-
-		return self.ensureFromlist(m, fromlist)
+		return m
 
 	def getParent(self, caller, level=-1):
 		if not caller or level == 0:
@@ -159,8 +163,8 @@ class ModuleLoader(Singleton):
 		if fromlist == '*':
 			raise RuntimeError('Do not support importstar')
 
-		if fromlist in m.locals:
-			return m.locals[fromlist]
+		if fromlist in m.scope.locals:
+			return m.scope.locals[fromlist]
 
 		if m.__path__:
 			mname = "%s.%s" % (m.__name__, fromlist)
@@ -237,8 +241,7 @@ class ModuleLoader(Singleton):
 	def addModule(self, fp, fqname, file, path=None):
 		mod = ast.parse(fp.read())
 		mod.__postinit__(fqname, file, path)
-		finder = AttributeFinder(findall=True)
-		mod.locals = finder.find(mod)
+		self.builder.build(mod, with_locals=True)
 		self.modules[fqname] = mod
 
 		return mod

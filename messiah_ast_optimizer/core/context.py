@@ -34,19 +34,22 @@ from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
 
 
 class Scope(object):
-	def __init__(self, type, name, lookup):
+	def __init__(self, type, name, lookup, locals):
 		self.type = type
 		self.name = name
 		self.lookup = lookup
+		self.locals = locals
 
 	def identify(name):
 		return self.lookup.get(name, NT_UNKNOWN)
 
 	def __repr__(self):
-		return '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])
+		msg = '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])
+		msg = '%s\n%s' % (msg, self.locals)
+		return msg
 
 
-class FinderScope(object):
+class BuilderScope(object):
 	"""modify By inner module compiler.symbols"""
 
 	def __init__(self, type, name=''):
@@ -54,7 +57,7 @@ class FinderScope(object):
 		self.name = name
 		self.defs = {}
 		self.uses = {}
-		self.globals = {}
+		self.globalvars = {}
 		self.argvars = {}
 		self.freevars = {}
 		self.cellvars = {}
@@ -62,14 +65,16 @@ class FinderScope(object):
 		self.nested = False
 		self.generator = False
 
+		self.locals = {}
+
 	def __repr__(self):
-		return """defs: %s\nuses: %s\nglobals: %s\nargvars: %s\nfreevars: %s \ncellvars: %s
-		""" % (self.defs, self.uses, self.globals, self.argvars, self.freevars, self.cellvars)
+		return """defs: %s\nuses: %s\nglobalvars: %s\nargvars: %s\nfreevars: %s \ncellvars: %s
+		""" % (self.defs, self.uses, self.globalvars, self.argvars, self.freevars, self.cellvars)
 
 	def dump(self):
-		names = self.defs.keys() + self.uses.keys() + self.globals.keys()
+		names = self.defs.keys() + self.uses.keys() + self.globalvars.keys()
 		lookup = {name : self.identify(name) for name in names}
-		return Scope(self.type, self.name, lookup)
+		return Scope(self.type, self.name, lookup, self.locals)
 
 	def addDef(self, name):
 		self.defs[name] = 1
@@ -77,12 +82,20 @@ class FinderScope(object):
 	def addUse(self, name):
 		self.uses[name] = 1
 
+	def addLocals(self, name, node):
+		self.locals[name] = node
+
+	def removeLocals(self, names):
+		for name in names:
+			if name and name in self.locals:
+				del self.locals[name]
+
 	def addGlobal(self, name):
 		if name in self.uses or name in self.defs:
 			pass
 		if name in self.argvars:
 			raise SyntaxError, "%s in %s is global and parameter" % (name, self.name)
-		self.globals[name] = 1
+		self.globalvars[name] = 1
 
 	def addArgvars(self, name):
 		self.defs[name] = 1
@@ -90,7 +103,7 @@ class FinderScope(object):
 
 	def getNames(self):
 		d = {}
-		imap(d.update, (self.defs, self.uses, self.globals))
+		imap(d.update, (self.defs, self.uses, self.globalvars))
 		return d.keys()
 
 	def addChildScope(self, scope):
@@ -117,7 +130,7 @@ class FinderScope(object):
 		return child_globals
 
 	def identify(self, name):
-		if name in self.globals:
+		if name in self.globalvars:
 			return NT_GLOBAL_EXPLICIT
 		if name in self.cellvars:
 			return NT_CELL
@@ -136,7 +149,7 @@ class FinderScope(object):
 		freevars = {}
 		freevars.update(self.freevars)
 		for name in self.uses.keys():
-			if name not in self.defs and name not in self.globals:
+			if name not in self.defs and name not in self.globalvars:
 				freevars[name] = 1
 		return freevars.keys()
 
@@ -146,12 +159,12 @@ class FinderScope(object):
 	def updateFreevars(self):
 		for child in self.child_scope:
 			freevars = child.getFreeVars()
-			globals = self.addFreevars(freevars)
-			for name in globals:
+			globalvars = self.addFreevars(freevars)
+			for name in globalvars:
 				child.forceGlobal(name)
 
 	def forceGlobal(self, name):
-		self.globals[name] = 1
+		self.globalvars[name] = 1
 		if name in self.freevars:
 			del self.freevars[name]
 		for child in self.child_scope:

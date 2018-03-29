@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from avatarmembers.impPokemon import AvatarMember
+from avtmembers.impPokemon import AvatarMember
 
 class PlayerAvatarRoleComponent(AvatarRoleComponent, ):
 

@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 """
 1) 2018.3.6: 需要提供一个获取import的文件路径的功能
+2) 2018.3.29: 现在要考虑rely module怎么处理
 """
 
 import os
@@ -9,18 +10,20 @@ import imp
 import utils
 
 from objects import ObjectAllocator
-from context import FinderScope
+import nodes
+from context import BuilderScope
 from itertools import imap
 from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
 
 
-class ScopeFinder(ast.NodeVisitor):
+class ScopeBuilder(ast.NodeVisitor):
 	def __init__(self):
 		self.scopes = []
 		self.lookups = []
+		self.with_locals = False
 
 	def pushScope(self, node, type, name=''):
-		scope = FinderScope(type, name)
+		scope = BuilderScope(type, name)
 		self.scopes and self.scope.addChildScope(scope)
 		self.scopes.append(scope)
 		self.lookups.append((node, scope))
@@ -36,7 +39,8 @@ class ScopeFinder(ast.NodeVisitor):
 	def parentScope(self):
 		return self.scopes[-2]
 
-	def find(self, node, name=''):
+	def build(self, node, with_locals=False):
+		self.with_locals = with_locals
 		self.visit(node)
 		self.dump()
 		self.scopes = []
@@ -45,6 +49,24 @@ class ScopeFinder(ast.NodeVisitor):
 		for node, scope in self.lookups:
 			node.scope = scope.dump()
 		self.lookups = []
+
+	def visit(self, node, parent=None):
+		parent and node.__postinit__(parent)
+
+		visitor = getattr(self, 'visit_%s' % node.__class__.__name__, self.genricVisit)
+		visitor(node)
+
+	def genricVisit(self, node):
+		for field in node._fields:
+			cnode = getattr(node, field)
+			if isinstance(cnode, list):
+				for item in cnode:
+					if isinstance(item, ast.AST):
+						self.visit(item, parent=node)
+			elif isinstance(cnode, ast.AST):
+				self.visit(cnode, parent=node)
+
+		return node
 
 	def visit_Module(self, node):
 		self.pushScope(node, ST_MODULE)
@@ -62,12 +84,14 @@ class ScopeFinder(ast.NodeVisitor):
 		scope.updateFreevars()
 		self.popScope()
 
-		self.scope.addDef(node.name)
 		for base in node.bases:
 			self.visit(base)
 
 		for deco in node.decorator_list:
 			self.visit(deco)
+
+		self.scope.addDef(node.name)
+		self.enableStaticLocals() and self.scope.addLocals(node.name, node)
 
 	def visit_FunctionDef(self, node):
 		self.pushScope(node, ST_FUNCTION)
@@ -88,6 +112,7 @@ class ScopeFinder(ast.NodeVisitor):
 			self.visit(n)
 
 		self.scope.addDef(node.name)
+		self.enableStaticLocals() and self.scope.addLocals(node.name, node)
 
 	def visit_GeneratorExp(self, node):
 		self.pushScope(node, ST_GENERATOR)
@@ -138,14 +163,21 @@ class ScopeFinder(ast.NodeVisitor):
 		else:
 			self.scope.addDef(node.id)
 
+	def visit_Assign(self, node):
+		if not self.enableStaticLocals():
+			return self.generic_visit(node)
+
+		scope = self.scope
+		for target in node.targets:
+			scope.removeLocals(utils.get_names(target, pure_only=False))
+		self.generic_visit(node)
+
+	def enableStaticLocals(self):
+		return self.with_locals and self.scope.type in (ST_MODULE, ST_CLASS)
+
 	 
 class AttributeFinder(ast.NodeVisitor):
-	"""
-	1）不能处理获取import的内容
-	2）赋值不支持嵌套嵌套赋值， a, (b, (c, d)), e = [1, (2, (3, 4)), 5]
-	3）简单的展开a, b, c = 1, 2, 3, 4支持
-	4) 赋值支持多个target，如a=b=c
-	"""
+
 	def __init__(self, findattrs=None, findall=False, predicate=None):
 		self.findattrs = findattrs or []
 		self.findall = findall
@@ -193,17 +225,13 @@ class AttributeFinder(ast.NodeVisitor):
 		if self.predicate and not self.predicate(node):
 			return
 
-		attrs = ObjectAllocator.allocate(node)
-		attrs = {name: value for name, value in attrs.iteritems() if self.findall or name in self.findattrs}
-		self.attrs.update(attrs)
-
 
 if __name__ == '__main__':
 	node = ast.parse(open('../test.py').read())
 	# finder = AttributeFinder(['A'], True)
 	# print finder.find(node)
 
-	finder = ScopeFinder()
-	finder.find(node)
-	# print node.body[0].scope
+	finder = ScopeBuilder()
+	finder.build(node, with_locals=True)
+	print node.scope
 	# print node.body[0].body[1].scope.show()

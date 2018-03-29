@@ -7,6 +7,7 @@ import _ast
 import inspect
 
 from module_loader import ModuleLoader
+from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN
 
 
 def dynamic_extend(cls):
@@ -22,25 +23,34 @@ class Node(object):
 	def __postinit__(self, parent):
 		self.parent = parent
 		self.is_constant = False
+		self.scope = None
 
-	def module(self):
+	def nModule(self):
 		module = self
 		while module.parent:
 			module = module.parent
 
 		return module
 
-	def func(self):
-		f = self.parent
-		while f and not isinstance(f, ast.FunctionDef):
-			f = f.parent
-		return f
+	def nScope(self):
+		scope = self
+		while scope and scope.scope is None:
+			scope = scope.parent
 
-	def cls(self):
-		c = self.parent
-		while c and not isinstance(c, ast.ClassDef):
-			c = c.parent
-		return c
+		return scope if scope.scope else None
+
+	def nFunc(self):
+		func = self
+		while func and not isinstance(f, ast.FunctionDef):
+			func = func.parent
+
+		return func if isinstance(func, ast.FunctionDef) else None
+
+	def nClass(self):
+		cls = self
+		while cls and not isinstance(cls, ast.ClassDef):
+			cls = cls.parent
+		return cls if isinstance(cls, ast.ClassDef) else None
 
 	def assignConst(self, val):
 		self.is_constant = True
@@ -50,12 +60,15 @@ class Node(object):
 class ScopeNode(Node):
 	def __postinit__(self, parent):
 		Node.__postinit__.im_func(self, parent)
-		self.local_names = []  # locals
-		self.scope = None
 
-	def setScope(self, scope):
-		self.scope = scope
+	def load(self, name, only_locals=True):
+		sc = self.scope.identify(name) == NT_LOCAL
+		if sc:
+			return self.scope.locals.get(name, None)
+		if not only_locals and sc in (NT_GLOBAL_EXPLICIT, NT_GLOBAL_IMPLICIT):
+			return self.nModule().load(name)
 
+		return None
 
 @dynamic_extend(_ast.alias)
 class alias(Node):
@@ -204,7 +217,11 @@ class Call(Node):
 
 @dynamic_extend(_ast.ClassDef)
 class ClassDef(ScopeNode):
-	def getMro(self):
+	def nMro(self):
+		mro = [self]
+		seqs = [seq.nMro() for seq in self.nBases() if seq]
+
+	def nBases(self):
 		pass
 
 
@@ -332,7 +349,7 @@ class Import(Node):
 
 	def lookup(self, name):
 		name = self.lookups.get(name, '')
-		return self.module().importModule(name) if name else None
+		return self.nModule().importModule(name) if name else None
 
 
 @dynamic_extend(_ast.ImportFrom)
@@ -343,7 +360,7 @@ class ImportFrom(Node):
 
 	def lookup(self, name):
 		name = self.lookups.get(name, '')
-		return self.module().importModule(self.module, fromlist=name, level=self.level)
+		return self.nModule().importModule(self.module, fromlist=name, level=self.level) if name else None
 
 
 @dynamic_extend(_ast.In)
@@ -419,7 +436,7 @@ class Mod(Node):
 @dynamic_extend(_ast.Module)
 class Module(ScopeNode):
 	def importModule(self, name, fromlist=None, level=-1):
-		pass
+		return ModuleLoader().load(name, fromlist, level, caller=self)
 
 	def __postinit__(self, name, file, path):
 		Node.__postinit__.im_func(self, None)
@@ -427,8 +444,11 @@ class Module(ScopeNode):
 		self.__file__ = file
 		self.__path__ = path
 
-	def root(self):
+	def nModule(self):
 		return self
+
+	def load(self, name, only_locals=True):
+		return self.scope.locals.get(name, None)
 
 
 @dynamic_extend(_ast.Mult)
@@ -438,7 +458,8 @@ class Mult(Node):
 
 @dynamic_extend(_ast.Name)
 class Name(Node):
-	pass
+	def load(self, only_locals=True):
+		return self.nScope().load(self.id, only_locals)
 
 
 @dynamic_extend(_ast.Not)

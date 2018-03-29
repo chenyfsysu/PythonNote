@@ -41,5 +41,9 @@ class ComponentTransformer(MessiahStepTransformer):
 
 		return node
 
+	def visit_ImportFrom(self, node, context):
+		print '11111111111', node.lookup('AvatarMember')
+		return node
+
 
 ComponentOptimizeStep = MessiahOptimizerStep(tokenizer=ComponentTokenizer, visitor=ComponentVisitor, transformer=ComponentTransformer)

@@ -74,3 +74,6 @@ hotfix加工具
 1. scope功能
 2. 根据name inferNode功能
 3. import和mro实现
+1) ModuleLoader路径再整理一下
+2）mro和name load功能实现
+3）重现实现constant inline和component merge
