@@ -114,7 +114,7 @@ def get_constant(node):
 
 def get_names(node, pure_only=True):
 	if isinstance(node, ast.Name): 
-		return node.id
+		return [node.id]
 
 	if isinstance(node, ast.Tuple):
 		names = []
@@ -122,7 +122,7 @@ def get_names(node, pure_only=True):
 			item_names = get_names(item)
 			if pure_only and item_names is None:
 				return None
-			names.append(item_names)
+			names.append(item_names) if item_names is None else names.extend(item_names)
 		return names
 
 
@@ -192,8 +192,6 @@ def topo_sort(verts, edges, relies=None):
 
 
 if __name__ == '__main__':
-	# node = ast.parse('a, (b, (c, d)) = 1, (2, (3, (4, 5)))').body[0]
-	# node = ast.parse('a, (b, (c, d)) = 1, (2, self.test())').body[0]
-	# node = ast.parse('self.name = 1, 3').body[0]
-	# print unpack_sequence(node.targets[0], node.value)
-	print is_parent_dir('client/common', 'client/common/Avatar/main.py')
+	node = ast.parse('part_a, part_b, (v_type, value) = fml').body[0]
+	node = ast.parse('a, self.name = 1').body[0]
+	print get_names(node.targets[0], pure_only=False)

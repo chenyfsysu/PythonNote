@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 from core.base import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
-from core.objects import LazyImportObject
 from collections import defaultdict
 from core import utils
 
@@ -85,9 +84,10 @@ class ConstantTransformer(MessiahStepTransformer):
 		if not isinstance(node.value, ast.Name) or not isinstance(node.ctx, ast.Load):
 			return node
 
-		var = context.load(node.value.id, lazy=False)
-		if not isinstance(var, LazyImportObject):
-			return node
+		print '1111111111111', node.value.id, node._fields
+		return node
+		# if not isinstance(var, LazyImportObject):
+		# 	return node
 
 		attrid = (node.value.id, node.attr)
 		if attrid in self.constants:

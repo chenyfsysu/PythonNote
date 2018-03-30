@@ -9,14 +9,13 @@ import ast
 import imp
 import utils
 
-from objects import ObjectAllocator
 import nodes
 from context import BuilderScope
 from itertools import imap
 from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
 
 
-class ScopeBuilder(ast.NodeVisitor):
+class ScopeBuilder(object):
 	def __init__(self):
 		self.scopes = []
 		self.lookups = []
@@ -70,13 +69,13 @@ class ScopeBuilder(ast.NodeVisitor):
 
 	def visit_Module(self, node):
 		self.pushScope(node, ST_MODULE)
-		self.generic_visit(node)
+		self.genricVisit(node)
 		self.popScope()
 
 	def visit_ClassDef(self, node):
 		self.pushScope(node, ST_CLASS)
 		for body in node.body:
-			self.visit(body)
+			self.visit(body, parent=node)
 
 		scope, parent = self.scope, self.parentScope
 		if parent.nested or parent.type == ST_FUNCTION:
@@ -85,19 +84,21 @@ class ScopeBuilder(ast.NodeVisitor):
 		self.popScope()
 
 		for base in node.bases:
-			self.visit(base)
+			self.visit(base, parent=node)
+			base.use_parent_scope = True
 
 		for deco in node.decorator_list:
-			self.visit(deco)
+			self.visit(deco, parent=node)
+			deco.use_parent_scope = True
 
 		self.scope.addDef(node.name)
 		self.enableStaticLocals() and self.scope.addLocals(node.name, node)
 
 	def visit_FunctionDef(self, node):
 		self.pushScope(node, ST_FUNCTION)
-		self.visit(node.args)
+		self.visit(node.args, parent=node)
 		for body in node.body:
-			self.visit(body)
+			self.visit(body, parent=node)
 
 		scope, parent = self.scope, self.parentScope
 		if parent.nested or parent.type == ST_FUNCTION:
@@ -106,17 +107,19 @@ class ScopeBuilder(ast.NodeVisitor):
 		self.popScope()
 
 		for deco in node.decorator_list:
-			self.visit(deco)
+			self.visit(deco, parent=node)
+			deco.use_parent_scope = True
 	
 		for n in node.args.defaults:
-			self.visit(n)
+			self.visit(n, parent=node.args)
+			n.use_parent_scope = True
 
 		self.scope.addDef(node.name)
 		self.enableStaticLocals() and self.scope.addLocals(node.name, node)
 
 	def visit_GeneratorExp(self, node):
 		self.pushScope(node, ST_GENERATOR)
-		self.generic_visit(node)
+		self.genricVisit(node)
 		scope, parent = self.scope, self.parentScope
 		if parent.nested or parent.type in (ST_FUNCTION, ST_GENERATOR):
 			scope.nested = True
@@ -125,8 +128,8 @@ class ScopeBuilder(ast.NodeVisitor):
 
 	def visit_Lambda(self, node):
 		self.pushScope(node, ST_FUNCTION)
-		self.visit(node.args)
-		self.visit(node.body)
+		self.visit(node.args, parent=node)
+		self.visit(node.body, parent=node)
 
 		scope, parent = self.scope, self.parentScope
 		if parent.nested or parent.type == ST_FUNCTION:
@@ -135,7 +138,8 @@ class ScopeBuilder(ast.NodeVisitor):
 		self.popScope()
 
 		for n in node.args.defaults:
-			self.visit(n)
+			self.visit(n, parent=node.args)
+			n.use_parent_scope = True
 
 	def visit_arguments(self, node):
 		for args in node.args:
@@ -146,13 +150,16 @@ class ScopeBuilder(ast.NodeVisitor):
 	def visit_ImportFrom(self, node):
 		for alias in node.names:
 			name, asname = alias.name, alias.asname
-			name != "*" and self.scope.addDef(asname or name)
+			if name != "*":
+				self.scope.addDef(asname or name)
+				self.enableStaticLocals() and self.scope.addLocals(asname or name, node)
 
 	def visit_Import(self, node):
 		for alias in node.names:
 			name, asname = alias.name, alias.asname
 			name = name[:name.find('.')] if '.' in name else name
 			self.scope.addDef(asname or name)
+			self.enableStaticLocals() and self.scope.addLocals(asname or name, node)
 
 	def visit_Global(self, node):
 		map(self.scope.addGlobal, node.names)
@@ -165,12 +172,23 @@ class ScopeBuilder(ast.NodeVisitor):
 
 	def visit_Assign(self, node):
 		if not self.enableStaticLocals():
-			return self.generic_visit(node)
+			return self.genricVisit(node)
 
 		scope = self.scope
 		for target in node.targets:
-			scope.removeLocals(utils.get_names(target, pure_only=False))
-		self.generic_visit(node)
+			for name in utils.get_names(target, pure_only=False) or []:
+				scope.addLocals(name, node)
+		self.genricVisit(node)
+
+	def visit_AugAssign(self, node):
+		if isinstance(node.target, ast.Name):
+			self.scope.addLocals(node.target.id, node)
+		self.genricVisit(node)
+
+	def visit_Delete(self, node):
+		for target in node.targets:
+			self.scope.batchRemoveLocals(utils.get_names(target, pure_only=False) or [])
+		self.genricVisit(node)
 
 	def enableStaticLocals(self):
 		return self.with_locals and self.scope.type in (ST_MODULE, ST_CLASS)

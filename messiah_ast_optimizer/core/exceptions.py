@@ -11,3 +11,6 @@ class MLoadNameException(Exception):
 
 class MImportException(MException):
 	pass
+
+class MMroResolutionException(MException):
+	pass

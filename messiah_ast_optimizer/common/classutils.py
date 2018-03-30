@@ -1,9 +1,6 @@
 # -*- coding:utf-8 -*-
 
 import ast
-import utils
-
-from finder import AttributeFinder
 
 
 def ismethod(node):

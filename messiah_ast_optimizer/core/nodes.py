@@ -8,12 +8,14 @@ import inspect
 
 from module_loader import ModuleLoader
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN
+from exceptions import MMroResolutionException
 
 
 def dynamic_extend(cls):
 	def _dynamic_extend(klass):
 		for name, func in inspect.getmembers(klass, inspect.ismethod):
 			setattr(cls, name, func.im_func)
+		cls.__excls__ = klass
 
 	return _dynamic_extend
 
@@ -23,7 +25,7 @@ class Node(object):
 	def __postinit__(self, parent):
 		self.parent = parent
 		self.is_constant = False
-		self.scope = None
+		self.use_parent_scope = False
 
 	def nModule(self):
 		module = self
@@ -32,12 +34,21 @@ class Node(object):
 
 		return module
 
-	def nScope(self):
-		scope = self
-		while scope and scope.scope is None:
-			scope = scope.parent
+	def isScope(self):
+		return issubclass(self.__excls__, ScopeNode)
 
-		return scope if scope.scope else None
+	def isScopeProvider(self):
+		return issubclass(self.__excls__, ScopeProvider)
+
+	def nScope(self):
+		scope, use_parent_scope = self, self.use_parent_scope
+		while scope and (not scope.isScope() or use_parent_scope):
+			scope = scope.parent
+			if scope.isScope() and use_parent_scope:
+				scope = scope.parent
+				use_parent_scope = scope.use_parent_scope	
+
+		return scope
 
 	def nFunc(self):
 		func = self
@@ -62,13 +73,22 @@ class ScopeNode(Node):
 		Node.__postinit__.im_func(self, parent)
 
 	def load(self, name, only_locals=True):
-		sc = self.scope.identify(name) == NT_LOCAL
-		if sc:
-			return self.scope.locals.get(name, None)
+		sc = self.scope.identify(name)
+		if sc == NT_LOCAL:
+			return self._load(name, self.scope.locals.get(name, None))
 		if not only_locals and sc in (NT_GLOBAL_EXPLICIT, NT_GLOBAL_IMPLICIT):
 			return self.nModule().load(name)
 
 		return None
+
+	def _load(self, name, node):
+		return node.lookup(name) if node and node.isScopeProvider() else node
+
+
+class ScopeProvider(object):
+	def lookup(self, name):
+		raise NotImplementedError
+
 
 @dynamic_extend(_ast.alias)
 class alias(Node):
@@ -220,12 +240,30 @@ class ClassDef(ScopeNode):
 	def nMro(self):
 		mro = [self]
 		seqs = [seq.nMro() for seq in self.nBases() if seq]
+		while True:
+			seqs = filter(None, seqs)
+			if not seqs:
+				break
+
+			for seq in seqs:
+				merge = seq[0]
+				if any(s for s in seqs if merge in s[1:]):
+					merge = None
+				else:
+					break
+			if not merge:
+				raise MMroResolutionException('Cannot create consisten method resolution')
+			mro.append(merge)
+			for seq in seqs:
+				merge in seq and seq.remove(merge)
+
+		return mro
 
 	def nBases(self):
 		bases = []
 		for base in self.bases:
 			if isinstance(base, _ast.Name):
-				base.id != 'object' and bases.append(base.load())
+				not base.isBuiltinObject() and bases.append(base.load())
 			elif isinstance(base, _ast.Attribute):
 				pass
 		return bases
@@ -347,7 +385,7 @@ class IfExp(Node):
 
 
 @dynamic_extend(_ast.Import)
-class Import(Node):
+class Import(Node, ScopeProvider):
 	def __postinit__(self, parent):
 		Node.__postinit__.im_func(self, parent)
 
@@ -359,7 +397,7 @@ class Import(Node):
 
 
 @dynamic_extend(_ast.ImportFrom)
-class ImportFrom(Node):
+class ImportFrom(Node, ScopeProvider):
 	def __postinit__(self, parent):
 		Node.__postinit__.im_func(self, parent)
 		self.lookups = {alias.asname or alias.name: alias.name for alias in self.names}
@@ -454,7 +492,7 @@ class Module(ScopeNode):
 		return self
 
 	def load(self, name, only_locals=True):
-		return self.scope.locals.get(name, None)
+		return self._load(name, self.scope.locals.get(name, None))
 
 
 @dynamic_extend(_ast.Mult)
@@ -464,6 +502,9 @@ class Mult(Node):
 
 @dynamic_extend(_ast.Name)
 class Name(Node):
+	def isBuiltinObject(self):
+		return self.id == 'object'
+
 	def load(self, only_locals=True):
 		return self.nScope().load(self.id, only_locals)
 

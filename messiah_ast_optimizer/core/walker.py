@@ -30,8 +30,6 @@ class AstConstantMixin(IVisitor):
 			node.assignConst(tuple((elt.val for elt in node.elts)))
 
 	def postvisit_Set(self, node):
-		if not isinstance(node.ctx, ast.Load):
-			return
 		if self._allEltsConstant(node.elts):
 			node.assignConst({elt.val for elt in node.elts})
 
@@ -47,7 +45,6 @@ class AstConstantMixin(IVisitor):
 
 	def _allEltsConstant(self, elts):
 		return all((elt.is_constant for elt in elts))
-
 
 
 class AstScopeMixin(IVisitor):
@@ -87,22 +84,37 @@ class AstScopeMixin(IVisitor):
 		self.scope.addLocals(node.name, node)
 
 	def postvisit_Assign(self, node):
-		pass
+		scope = self.scope
+		for target in node.targets:
+			for name in utils.get_names(target, pure_only=False) or []:
+				print name
+				scope.addLocals(name, node)
 
 	def postvisit_AugAssign(self, node):
 		if isinstance(node.target, ast.Name):
-			name = node.target.id
+			self.scope.addLocals(node.target.id, node)
 		return node
 
 	def postvisit_Import(self, node):
+		scope = self.scope
+		for alias in node.names:
+			name, asname = alias.name, alias.asname
+			if name != "*":
+				scope.addLocals(name, node)
 		return node
 
 	def postvisit_ImportFrom(self, node):
+		scope = self.scope
+		for alias in node.names:
+			name, asname = alias.name, alias.asname
+			name = name[:name.find('.')] if '.' in name else name
+			scope.addLocals(asname or name, node)
 		return node
 
 	def postvisit_Delete(self, node):
+		for target in node.targets:
+			self.scope.batchRemoveLocals(utils.get_names(target, pure_only=False) or [])
 		return node
-
 
 
 class TokenizeWalker(HostVisitor):
@@ -115,6 +127,8 @@ class TokenizeWalker(HostVisitor):
 		self.context = None
 
 	def walk(self, fullpath, relpath):
+		return
+		print '>>>>>>>>>tokenize: %s' % relpath
 		self.notifyVisitFile(fullpath, relpath)
 
 		self.context = TokenizeContext(fullpath, relpath)
@@ -139,10 +153,11 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 		self.register(self)
 
 	def walk(self, fullpath, relpath):
+		print '>>>>>>>>>visit: %s' % relpath
 		self.notifyVisitFile(fullpath, relpath)
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 
-		ModuleLoader().setPath(['entities', 'entities/client', 'entities/common'])
+		ModuleLoader().setPath(['entities/client', 'entities/common'])
 		tree = ModuleLoader().reloadRoot(fullpath)
 		tree = self._walk(tree)
 
@@ -150,8 +165,6 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 		return tree
 
 	def _walk(self, node, parent=None):
-		parent and node.__postinit__(parent)
-
 		key = node.__class__.__name__
 		if hasattr(self, 'fullvisit_%s' % key):
 			self.fullvisit(node)
@@ -182,8 +195,6 @@ class TransformWalker(VisitWalker):
 		super(TransformWalker, self).__init__(rootpath)
 
 	def _walk(self, node, parent=None):
-		parent and node.__postinit__(parent)
-
 		key = node.__class__.__name__
 		if hasattr(self, 'fullvisit_%s' % key):
 			node = self.fullvisit(node)

@@ -1,6 +1,3 @@
 # -*- coding:utf-8 -*-
 
-from b import B
-
-class A(B, ):
-    pass
+(part_a, part_b, (v_type, value)) = fml

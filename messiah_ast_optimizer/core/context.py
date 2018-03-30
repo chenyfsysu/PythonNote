@@ -28,7 +28,6 @@ import utils
 
 from collections import defaultdict
 from itertools import imap
-from objects import ObjectAllocator, LazyImportObject
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN, NT_DUMP
 from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
 
@@ -40,11 +39,16 @@ class Scope(object):
 		self.lookup = lookup
 		self.locals = locals
 
-	def identify(name):
+	def identify(self, name):
 		return self.lookup.get(name, NT_UNKNOWN)
 
 	def addLocals(self, name, node):
 		self.locals[name] = node
+
+	def batchRemoveLocals(self, names):
+		for name in names:
+			if name and name in self.locals:
+				del self.locals[name]
 
 	def __repr__(self):
 		msg = '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])
@@ -86,13 +90,16 @@ class BuilderScope(object):
 		self.uses[name] = 1
 
 	def addLocals(self, name, node):
-		self.locals[name] = node
+		if name:
+			self.locals[name] = node
 
-	def removeLocals(self, names):
-		for name in names:
-			if name and name in self.locals:
-				del self.locals[name]
-
+	def batchRemoveLocals(self, names):
+		map(self.removeLocals, names)
+	
+	def removeLocals(self, name):
+		if name and name in self.locals:
+			del self.locals[name]
+	
 	def addGlobal(self, name):
 		if name in self.uses or name in self.defs:
 			pass

@@ -11,7 +11,7 @@ class AvatarMember(iPokemonComponent):
 
 import ast
 from core.base import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
-import core.classutils
+import common.classutils
 
 
 class ComponentTokenizer(MessiahStepTokenizer):
@@ -31,11 +31,15 @@ class ComponentTransformer(MessiahStepTransformer):
 		self.merge_cls = {}
 
 	def visit_ClassDef(self, node, context):
-		print node.nBases()
+		bases = node.nBases()
+		if bases and bases[0]:
+			base = bases[0]
+			print base.parent.scope.locals
+		print 'MRO of %s: %s' % (node.name, [n.name for n in node.nMro()])
 		return node
 
 	def visit_ImportFrom(self, node, context):
-		print '11111111111', node.lookup('AvatarMember')
+		# print '11111111111', node.lookup('AvatarMember')
 		return node
 
 
