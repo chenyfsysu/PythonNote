@@ -5,10 +5,11 @@
 
 import _ast
 import inspect
+import itertools
 
 from module_loader import ModuleLoader
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN
-from exceptions import MMroResolutionException
+from exceptions import MMroResolutionException, MUnpackSequenceException
 
 
 def dynamic_extend(cls):
@@ -22,10 +23,13 @@ def dynamic_extend(cls):
 
 class Node(object):
 
-	def __postinit__(self, parent):
+	def __preinit__(self, parent):
 		self.parent = parent
-		self.is_constant = False
-		self.use_parent_scope = False
+		self.n_isconstant = False
+		self.n_use_pscope = False
+
+	def __postinit__(self):
+		pass
 
 	def nModule(self):
 		module = self
@@ -37,16 +41,18 @@ class Node(object):
 	def isScope(self):
 		return issubclass(self.__excls__, ScopeNode)
 
-	def isScopeProvider(self):
-		return issubclass(self.__excls__, ScopeProvider)
+	def isNamespaceProvider(self):
+		return issubclass(self.__excls__, NamespaceProvider)
 
 	def nScope(self):
-		scope, use_parent_scope = self, self.use_parent_scope
-		while scope and (not scope.isScope() or use_parent_scope):
+		scope, n_use_pscope = self, self.n_use_pscope
+		while scope and (not scope.isScope() or n_use_pscope):
 			scope = scope.parent
-			if scope.isScope() and use_parent_scope:
+			if scope.isScope() and n_use_pscope:
 				scope = scope.parent
-				use_parent_scope = scope.use_parent_scope	
+				n_use_pscope = False
+			if scope.n_use_pscope:
+				n_use_pscope = scope.n_use_pscope
 
 		return scope
 
@@ -64,13 +70,13 @@ class Node(object):
 		return cls if isinstance(cls, ast.ClassDef) else None
 
 	def assignConst(self, val):
-		self.is_constant = True
-		self.val = val
+		self.n_isconstant = True
+		self.n_val = val
 
 
 class ScopeNode(Node):
-	def __postinit__(self, parent):
-		Node.__postinit__.im_func(self, parent)
+	def __preinit__(self, parent):
+		Node.__preinit__.im_func(self, parent)
 
 	def load(self, name, only_locals=True):
 		sc = self.scope.identify(name)
@@ -82,10 +88,10 @@ class ScopeNode(Node):
 		return None
 
 	def _load(self, name, node):
-		return node.lookup(name) if node and node.isScopeProvider() else node
+		return node.lookup(name) if node and node.isNamespaceProvider() else node
 
 
-class ScopeProvider(object):
+class NamespaceProvider(object):
 	def lookup(self, name):
 		raise NotImplementedError
 
@@ -176,8 +182,45 @@ class Assert(Node):
 
 
 @dynamic_extend(_ast.Assign)
-class Assign(Node):
-	pass
+class Assign(Node, NamespaceProvider):
+	def __preinit__(self, parent):
+		Node.__preinit__.im_func(self, parent)
+
+	def __postinit__(self):
+		self.n_lookups = {}
+		self.evalLookup()
+
+	def evalLookup(self):
+		for i, target in enumerate(self.targets):
+			lookups = self.unpackSequence(target, self.value)
+			self.n_lookups.update(lookups)
+
+	def unpackSequence(self, target, val):
+		if isinstance(target, _ast.Name):
+			return {target.id : val}
+		elif isinstance(target, _ast.Attribute):
+			return {}
+		else:
+			if val is None:
+				items = {}
+				for t in target.elts:
+					items.update(self.unpackSequence(t, None))
+				return items
+
+			if not isinstance(val, (_ast.List, _ast.Tuple)):
+				return self.unpackSequence(target, None)
+			
+			if val and len(target.elts) != len(val.elts):
+				raise MUnpackSequenceException('ValueError: unpack sequence of targets and value do not match')
+
+			items = {}
+			for t, v in zip(target.elts, val.elts):
+				items.update(self.unpackSequence(t, v))
+
+			return items
+
+	def lookup(self, name):
+		return self.n_lookups.get(name, None)
 
 
 @dynamic_extend(_ast.Attribute)
@@ -186,8 +229,9 @@ class Attribute(Node):
 
 
 @dynamic_extend(_ast.AugAssign)
-class AugAssign(Node):
-	pass
+class AugAssign(Node, NamespaceProvider):
+	def lookup(self, name):
+		return None
 
 
 @dynamic_extend(_ast.AugLoad)
@@ -267,6 +311,61 @@ class ClassDef(ScopeNode):
 			elif isinstance(base, _ast.Attribute):
 				pass
 		return bases
+
+	def nFullBases(self):
+		fullbases = []
+		for bases in self.nBases():
+			fullbases.append(bases)
+			fullbases.extend(bases.nFullBases())
+		return fullbases
+
+	def nMethods(self):
+		pass
+
+	def nFullMethods(self, mro=None):
+		if not mro:
+			mro = self.nMro()
+
+	def nAttrs(self):
+		pass
+
+	def nFullAttrs(self):
+		pass
+
+	def isbaseclass(self, node):
+		if not isinstance(node, _ast.ClassDef):
+			return False
+
+		return node in self.nFullBases()
+
+	def getmembers(self):
+		methods, attrs =  {}, []
+		for body in self.body:
+			if isinstance(body, _ast.FunctionDef):
+				methods[body.name] = body
+			elif isinstance(body, (_ast.Assign, _ast.AugAssign)):
+				attrs.append(body)
+
+		return methods, attrs
+
+	def fullGetmembers(self, mro=None):
+		if not mro:
+			mro = self.nMro()
+
+		methods, attrs = {}, []
+		for cls in reversed(mro):
+			_methods, _attrs = cls.getmembers()
+			methods.update(_methods)
+			attrs.extend(_attrs)
+
+		return methods, attrs
+
+	def getbodies(self, predicate=None):
+		bodies = [body for body in self.body if not predicate or predicate(body)]
+		return bodies
+
+	def fullGetbodies(self, mro=None, predicate=None):
+		return [body for base in mro for body in base.getbodies(predicate)]
 
 
 @dynamic_extend(_ast.Compare)
@@ -385,25 +484,28 @@ class IfExp(Node):
 
 
 @dynamic_extend(_ast.Import)
-class Import(Node, ScopeProvider):
-	def __postinit__(self, parent):
-		Node.__postinit__.im_func(self, parent)
+class Import(Node, NamespaceProvider):
+	def __preinit__(self, parent):
+		Node.__preinit__.im_func(self, parent)
 
-		self.lookups = {alias.asname or alias.name: alias.name for alias in self.names}
+	def __postinit__(self):
+		self.n_lookups = {alias.asname or alias.name: alias.name for alias in self.names}
 
 	def lookup(self, name):
-		name = self.lookups.get(name, '')
+		name = self.n_lookups.get(name, '')
 		return self.nModule().importModule(name) if name else None
 
 
 @dynamic_extend(_ast.ImportFrom)
-class ImportFrom(Node, ScopeProvider):
-	def __postinit__(self, parent):
-		Node.__postinit__.im_func(self, parent)
-		self.lookups = {alias.asname or alias.name: alias.name for alias in self.names}
+class ImportFrom(Node, NamespaceProvider):
+	def __preinit__(self, parent):
+		Node.__preinit__.im_func(self, parent)
+
+	def __postinit__(self):
+		self.n_lookups = {alias.asname or alias.name: alias.name for alias in self.names}
 
 	def lookup(self, name):
-		name = self.lookups.get(name, '')
+		name = self.n_lookups.get(name, '')
 		return self.nModule().importModule(self.module, fromlist=name, level=self.level) if name else None
 
 
@@ -482,8 +584,8 @@ class Module(ScopeNode):
 	def importModule(self, name, fromlist=None, level=-1):
 		return ModuleLoader().load(name, fromlist, level, caller=self)
 
-	def __postinit__(self, name, file, path):
-		Node.__postinit__.im_func(self, None)
+	def __preinit__(self, name, file, path):
+		Node.__preinit__.im_func(self, None)
 		self.__name__ = name
 		self.__file__ = file
 		self.__path__ = path

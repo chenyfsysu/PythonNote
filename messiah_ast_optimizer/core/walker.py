@@ -27,24 +27,24 @@ class AstConstantMixin(IVisitor):
 		if not isinstance(node.ctx, ast.Load):
 			return
 		if self._allEltsConstant(node.elts):
-			node.assignConst(tuple((elt.val for elt in node.elts)))
+			node.assignConst(tuple((elt.n_val for elt in node.elts)))
 
 	def postvisit_Set(self, node):
 		if self._allEltsConstant(node.elts):
-			node.assignConst({elt.val for elt in node.elts})
+			node.assignConst({elt.n_val for elt in node.elts})
 
 	def postvisit_List(self, node):
 		if not isinstance(node.ctx, ast.Load):
 			return
 		if self._allEltsConstant(node.elts):
-			node.assignConst([elt.val for elt in node.elts])
+			node.assignConst([elt.n_val for elt in node.elts])
 
 	def postvisit_Dict(self, node):
 		if self._allEltsConstant(node.keys) and self._allEltsConstant(node.values):
-			node.assignConst({k.val: v.val for k, v in izip(node.keys, node.values)})
+			node.assignConst({k.n_val: v.n_val for k, v in izip(node.keys, node.values)})
 
 	def _allEltsConstant(self, elts):
-		return all((elt.is_constant for elt in elts))
+		return all((elt.n_isconstant for elt in elts))
 
 
 class AstScopeMixin(IVisitor):
@@ -87,7 +87,6 @@ class AstScopeMixin(IVisitor):
 		scope = self.scope
 		for target in node.targets:
 			for name in utils.get_names(target, pure_only=False) or []:
-				print name
 				scope.addLocals(name, node)
 
 	def postvisit_AugAssign(self, node):
@@ -127,7 +126,6 @@ class TokenizeWalker(HostVisitor):
 		self.context = None
 
 	def walk(self, fullpath, relpath):
-		return
 		print '>>>>>>>>>tokenize: %s' % relpath
 		self.notifyVisitFile(fullpath, relpath)
 
@@ -153,7 +151,6 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 		self.register(self)
 
 	def walk(self, fullpath, relpath):
-		print '>>>>>>>>>visit: %s' % relpath
 		self.notifyVisitFile(fullpath, relpath)
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 
@@ -188,6 +185,10 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 				self._walk(cnode, parent=node)
 
 		return node
+
+	def postvisit(self, key, node):
+		node.__postinit__()
+		return super(VisitWalker, self).postvisit(key, node)
 
 
 class TransformWalker(VisitWalker):

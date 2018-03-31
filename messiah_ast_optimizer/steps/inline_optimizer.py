@@ -8,7 +8,7 @@ class InlineTokenizer(MessiahStepTokenizer):
 
 class InlineVisitor(MessiahStepVisitor):
 	def visit_Name(self, node, context):
-		pass
+		return node
 
 
 class InlineTransformer(MessiahStepTransformer):

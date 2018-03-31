@@ -15,11 +15,11 @@ from itertools import imap
 from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
 
 
-class ScopeBuilder(object):
+class ModuleBuilder(object):
 	def __init__(self):
 		self.scopes = []
 		self.lookups = []
-		self.with_locals = False
+		self.is_rely = True
 
 	def pushScope(self, node, type, name=''):
 		scope = BuilderScope(type, name)
@@ -38,8 +38,9 @@ class ScopeBuilder(object):
 	def parentScope(self):
 		return self.scopes[-2]
 
-	def build(self, node, with_locals=False):
-		self.with_locals = with_locals
+	def build(self, node, fqname, file, path, is_rely=True):
+		self.is_rely = is_rely
+		node.__preinit__(fqname, file, path)
 		self.visit(node)
 		self.dump()
 		self.scopes = []
@@ -50,10 +51,12 @@ class ScopeBuilder(object):
 		self.lookups = []
 
 	def visit(self, node, parent=None):
-		parent and node.__postinit__(parent)
+		parent and node.__preinit__(parent)
 
 		visitor = getattr(self, 'visit_%s' % node.__class__.__name__, self.genricVisit)
 		visitor(node)
+
+		self.is_rely and node.__postinit__()
 
 	def genricVisit(self, node):
 		for field in node._fields:
@@ -85,11 +88,11 @@ class ScopeBuilder(object):
 
 		for base in node.bases:
 			self.visit(base, parent=node)
-			base.use_parent_scope = True
+			base.n_use_pscope = True
 
 		for deco in node.decorator_list:
 			self.visit(deco, parent=node)
-			deco.use_parent_scope = True
+			deco.n_use_pscope = True
 
 		self.scope.addDef(node.name)
 		self.enableStaticLocals() and self.scope.addLocals(node.name, node)
@@ -108,11 +111,11 @@ class ScopeBuilder(object):
 
 		for deco in node.decorator_list:
 			self.visit(deco, parent=node)
-			deco.use_parent_scope = True
+			deco.n_use_pscope = True
 	
 		for n in node.args.defaults:
 			self.visit(n, parent=node.args)
-			n.use_parent_scope = True
+			n.n_use_pscope = True
 
 		self.scope.addDef(node.name)
 		self.enableStaticLocals() and self.scope.addLocals(node.name, node)
@@ -139,7 +142,7 @@ class ScopeBuilder(object):
 
 		for n in node.args.defaults:
 			self.visit(n, parent=node.args)
-			n.use_parent_scope = True
+			n.n_use_pscope = True
 
 	def visit_arguments(self, node):
 		for args in node.args:
@@ -191,7 +194,7 @@ class ScopeBuilder(object):
 		self.genricVisit(node)
 
 	def enableStaticLocals(self):
-		return self.with_locals and self.scope.type in (ST_MODULE, ST_CLASS)
+		return self.is_rely and self.scope.type in (ST_MODULE, ST_CLASS)
 
 	 
 class AttributeFinder(ast.NodeVisitor):
@@ -249,7 +252,7 @@ if __name__ == '__main__':
 	# finder = AttributeFinder(['A'], True)
 	# print finder.find(node)
 
-	finder = ScopeBuilder()
-	finder.build(node, with_locals=True)
+	finder = ModuleBuilder()
+	finder.build(node, is_rely=True)
 	print node.scope
 	# print node.body[0].body[1].scope.show()

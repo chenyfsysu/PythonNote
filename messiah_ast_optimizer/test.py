@@ -1,6 +1,7 @@
-a = 1
-b = 1
-class A(object):
-	c = 1
+def func():
+	print 'func'
 
-del (a, b), A.c
+class A(object):
+	A = 1
+	func()
+	B = 2

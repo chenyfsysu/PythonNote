@@ -11,7 +11,7 @@ import imp
 import ast
 import utils
 import exceptions
-from builder import ScopeBuilder
+from builder import ModuleBuilder
 
 
 class Singleton(object):
@@ -30,7 +30,7 @@ class ModuleLoader(Singleton):
 		self.root = None
 		self.path = []
 		self.modules = {}
-		self.builder = ScopeBuilder()
+		self.builder = ModuleBuilder()
 
 	def setPath(self, path):
 		self.path = path
@@ -52,8 +52,7 @@ class ModuleLoader(Singleton):
 			file = os.path.join(path, '__init__.py') if path else fullpath
 
 			m = ast.parse(open(file).read())
-			m.__postinit__(tail, file, path)
-			self.builder.build(m)
+			self.builder.build(m, tail, file, path, is_rely=False)
 			self.modules[tail] = m
 
 			if not self.root:
@@ -99,9 +98,9 @@ class ModuleLoader(Singleton):
 	def getParent(self, caller, level=-1):
 		if not caller or level == 0:
 			return None
-		pname = caller.name
+		pname = caller.__name__
 		if level >= 1:
-			if caller.path:
+			if caller.__path__:
 				level -= 1
 			if level == 0:
 				parent = self.modules[pname]
@@ -112,7 +111,7 @@ class ModuleLoader(Singleton):
 			pname = ".".join(pname.split(".")[:-level])
 			parent = self.modules[pname]
 			return parent
-		if caller.path:
+		if caller.__path__:
 			parent = self.modules[pname]
 			assert caller is parent
 			return parent
@@ -120,7 +119,7 @@ class ModuleLoader(Singleton):
 			i = pname.rfind('.')
 			pname = pname[:i]
 			parent = self.modules[pname]
-			assert parent.name == pname
+			assert parent.__name__ == pname
 			return parent
 		return None
 
@@ -240,8 +239,7 @@ class ModuleLoader(Singleton):
 
 	def addModule(self, fp, fqname, file, path=None):
 		mod = ast.parse(fp.read())
-		mod.__postinit__(fqname, file, path)
-		self.builder.build(mod, with_locals=True)
+		self.builder.build(mod, fqname, file, path, is_rely=True)
 		self.modules[fqname] = mod
 
 		return mod

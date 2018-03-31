@@ -7,9 +7,15 @@ from core import utils
 
 import setting
 import ast
-
+import os
 
 Constant = ('True', 'False', 'None')
+
+
+def is_inline_file(root, file):
+	#TODO
+	return True
+	return any(os.path.join(root, f) == file for f in setting.INLINE_CONST_FILES)
 
 
 class ConstantTokenizer(MessiahStepTokenizer):
@@ -25,8 +31,7 @@ class ConstantTokenizer(MessiahStepTokenizer):
 		if context.__relpath__ not in setting.CONFIG_INLINE_CONST:
 			return
 
-		if setting.CONST_INLINE_TAG in token:
-			self.inline_consts[self._file].append(srow_scol[0])
+		setting.CONST_INLINE_TAG in token and self.inline_consts[self._file].append(srow_scol[0])
 
 
 class ConstantVisitor(MessiahStepVisitor):
@@ -84,13 +89,12 @@ class ConstantTransformer(MessiahStepTransformer):
 		if not isinstance(node.value, ast.Name) or not isinstance(node.ctx, ast.Load):
 			return node
 
-		print '1111111111111', node.value.id, node._fields
-		return node
-		# if not isinstance(var, LazyImportObject):
-		# 	return node
-
 		attrid = (node.value.id, node.attr)
-		if attrid in self.constants:
+		if attrid not in self.constants:
+			return node
+
+		refer = node.value.load(only_locals=False)
+		if isinstance(refer , ast.Module) and is_inline_file(context.__rootpath__, refer.__file__):
 			constant = self.constants[attrid]
 			node = utils.new_constant(constant, node)
 			utils.set_comment(node, '%s.%s=%s' % (attrid[0], attrid[1], constant))
