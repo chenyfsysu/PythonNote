@@ -12,16 +12,16 @@ def enum(*sequential, **named):
 	return type('Enum', (), enums)
 
 
-def compare_path(src, dst):
-	return os.path.normpath(src) == os.path.normpath(dst)
-
-
 def get_parent_dir(dir, level):
 	return os.path.abspath('%s%s' % (dir, '%s%s' % (os.path.sep, '..') * level))
 
 
 def is_parent_dir(parent, path):
 	return not os.path.relpath(path, parent).startswith(os.pardir)
+
+
+def is_same_file(src, dst):
+	return os.stat(src) == os.stat(dst)
 
 
 def get_lineno(node):

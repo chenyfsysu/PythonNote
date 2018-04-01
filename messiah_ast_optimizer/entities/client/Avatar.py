@@ -59,7 +59,7 @@ class Avatar(ClientAreaEntity, ):
             return
         if (self.id != p.id):
             if (not p.canLockTarget(self)):
-                p.popNotificationMsg(1001)
+                p.popNotificationMsg(const.SKILL_ID)
             else:
                 p.lockTarget(self)
             if (TasteQuery.tasteInActDuration and self.buffs.tasteCarrierNo()):

@@ -77,3 +77,10 @@ hotfix加工具
 1) ModuleLoader路径再整理一下
 2）mro和name load功能实现
 3）重现实现constant inline和component merge
+
+
+功能性需求在前
+配置型需求在后
+所以现在的首要任务还是拓展一下核心功能
+1)3点之前，阅读源码找灵感
+2）机场之后：丰富componennt

@@ -13,9 +13,7 @@ Constant = ('True', 'False', 'None')
 
 
 def is_inline_file(root, file):
-	#TODO
-	return True
-	return any(os.path.join(root, f) == file for f in setting.INLINE_CONST_FILES)
+	return any(utils.is_same_file(os.path.join(root, f), file) for f in setting.INLINE_CONST_FILES)
 
 
 class ConstantTokenizer(MessiahStepTokenizer):

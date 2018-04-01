@@ -1,7 +1,7 @@
-def func():
-	print 'func'
+c = 3
+def func(self):
+	pass
 
-class A(object):
-	A = 1
-	func()
-	B = 2
+print func.func_globals
+a = 1
+print func.func_globals

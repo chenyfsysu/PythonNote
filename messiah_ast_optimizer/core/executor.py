@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from utils import enum, compare_path
+from utils import enum
 
 import os
 import ast
