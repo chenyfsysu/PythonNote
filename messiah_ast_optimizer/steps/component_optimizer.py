@@ -28,6 +28,9 @@ class ComponentVisitor(MessiahStepVisitor):
 		# if isinstance(node.ctx, ast.Load):
 		# 	print node.load()
 
+	def visit_Call(self, node, context):
+		pass
+
 
 class ComponentTransformer(MessiahStepTransformer):
 	def __init__(self, optimizer):
@@ -37,13 +40,22 @@ class ComponentTransformer(MessiahStepTransformer):
 	def visit_ClassDef(self, node, context):
 		for deco in node.decorator_list:
 			if isinstance(deco, ast.Call) and deco.func.id == 'Components':
-				components = []
-				for comp in deco.args:
-					components.append(comp.load())
+				components = self.getAllComponents(deco.args)
+				print '111111111', components
 				self.mergeComponents(node, components)
 		# print 'MRO of %s: %s' % (node.name, [n.name for n in node.nMro()])
 		# print 'FullBases of %s: %s' % (node.name, [n.name for n in node.nFullBases()])
 		return node
+
+	def getAllComponents(self, args):
+		components = []
+		for comp in args:
+			if isinstance(comp, ast.Name):
+				components.append(comp.load(only_locals=True))
+			elif isinstance(comp, ast.Call):
+				print '11111111', comp.eval()
+			else:
+				raise RuntimeError('Invalid component merge')
 
 	def mergeComponents(self, host, components):
 		methods, attrs, properties = {}, [], []

@@ -1,7 +1,16 @@
-c = 3
-def func(self):
-	pass
+B = 10
 
-print func.func_globals
-a = 1
-print func.func_globals
+def wrapper(x):
+	def wrapper(func):
+		pass
+
+	return wrapper
+
+class A(object):
+
+	def func(self):
+		global B
+		B = 100
+
+import sys
+print sys._getframe()

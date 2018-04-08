@@ -92,7 +92,7 @@ class MessiahOptimizer(object):
 		self.transform_walker.notifyEnter()
 		for fullpath, relpath in self.filter_files.iteritems():
 			node = self.transform_walker.walk(fullpath, relpath)
-			fullpath = os.path.join('dump', relpath)
+			# fullpath = os.path.join('dump', relpath)
 			self.unparse(fullpath, node)
 
 		self.transform_walker.notifyExit()

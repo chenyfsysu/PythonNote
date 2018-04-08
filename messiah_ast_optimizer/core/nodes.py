@@ -9,7 +9,8 @@ import itertools
 
 from module_loader import ModuleLoader
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN
-from exceptions import MMroResolutionException, MUnpackSequenceException
+from exception import MMroResolutionException, MUnpackSequenceException, MEvalException
+from eval import PyFrame
 
 
 def dynamic_extend(cls):
@@ -30,6 +31,10 @@ class Node(object):
 
 	def __postinit__(self):
 		pass
+
+	def eval(self, *args):
+		print '111111111111', self
+		raise NotImplementedError
 
 	def nModule(self):
 		module = self
@@ -55,6 +60,9 @@ class Node(object):
 				n_use_pscope = scope.n_use_pscope
 
 		return scope
+
+	def nFrame(self):
+		pass
 
 	def nFunc(self):
 		func = self
@@ -89,6 +97,11 @@ class ScopeNode(Node):
 
 	def _load(self, name, node):
 		return node.lookup(name) if node and node.isNamespaceProvider() else node
+
+
+class FrameNode(object):
+	def __preinit__(self):
+		pass
 
 
 class NamespaceProvider(object):
@@ -138,7 +151,8 @@ class expr_context(Node):
 
 @dynamic_extend(_ast.keyword)
 class keyword(Node):
-	pass
+	def eval(self, frame):
+		return {self.arg: self.value.eval(frame)}
 
 
 @dynamic_extend(_ast.mod)
@@ -191,16 +205,17 @@ class Assign(Node, NamespaceProvider):
 		self.evalLookup()
 
 	def evalLookup(self):
+		
 		for i, target in enumerate(self.targets):
+			import astunparse
+
 			lookups = self.unpackSequence(target, self.value)
 			self.n_lookups.update(lookups)
 
 	def unpackSequence(self, target, val):
 		if isinstance(target, _ast.Name):
 			return {target.id : val}
-		elif isinstance(target, _ast.Attribute):
-			return {}
-		else:
+		elif isinstance(target, (_ast.List, _ast.Tuple)):
 			if val is None:
 				items = {}
 				for t in target.elts:
@@ -218,6 +233,8 @@ class Assign(Node, NamespaceProvider):
 				items.update(self.unpackSequence(t, v))
 
 			return items
+		else:
+			return {}
 
 	def lookup(self, name):
 		return self.n_lookups.get(name, None)
@@ -276,7 +293,23 @@ class Break(Node):
 
 @dynamic_extend(_ast.Call)
 class Call(Node):
-	pass
+	def eval(self, frame=None):
+		if not frame:
+			frame = PyFrame(dict(self.nModule().scope.locals), dict(self.nScope().scope.locals), {})
+
+		func = self.func.load()
+		if not isinstance(func, _ast.FunctionDef):
+			raise MEvalException('cannot eval NonFunctionDef')
+
+		if any((cell not in frame.f_cells for cell in func.scope.cells())):
+			raise MEvalException('closure was not given, eval call cannot continue')
+
+		args = [arg.eval(frame) for arg in self.args]
+		keywords = [kw.eval(frame) for kw in self.keywords]
+		starargs = self.starargs.eval(frame) if self.starargs else None
+		kwargs = self.kwargs.eval(frame) if self.kwargs else None
+
+		return func.eval(args, keywords, starargs, kwargs)
 
 
 @dynamic_extend(_ast.ClassDef)
@@ -450,7 +483,18 @@ class For(Node):
 
 @dynamic_extend(_ast.FunctionDef)
 class FunctionDef(ScopeNode):
-	pass
+	def __postinit__(self):
+		self.py_func = None
+
+	def eval(self, args, keywords, starargs, kwargs):
+		if self.decorator_list:
+			raise MEvalException('cannot eval function with decorator_list')
+
+
+		print '111111111', args, keywords, starargs, kwargs
+
+	def getCallArgs(self, args, keywords, starargs, kwargs):
+		pass
 
 
 @dynamic_extend(_ast.GeneratorExp)
@@ -610,6 +654,27 @@ class Name(Node):
 	def load(self, only_locals=True):
 		return self.nScope().load(self.id, only_locals)
 
+	def eval(self, frame):
+		if not isinstance(self.ctx, _ast.Load):
+			raise MEvalException('Eval name of Store type')
+
+		ref = None
+		nt = self.nScope().scope.identify(self.id)
+		if nt == NT_LOCAL:
+			ref = frame.loadName(self.id)
+		elif nt == NT_FREE:
+			ref = frame.loadDeref(self.id)
+		elif nt in (NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT):
+			ref = frame.loadGlobal(self.id)
+
+		if issubclass(ref.__excls__, NamespaceProvider):
+			return ref.lookup(self.id)
+
+		if not ref:
+			raise MEvalException('Cannot Load name %s' % self.id)
+
+		return ref
+
 
 @dynamic_extend(_ast.Not)
 class Not(Node):
@@ -628,7 +693,8 @@ class NotIn(Node):
 
 @dynamic_extend(_ast.Num)
 class Num(Node):
-	pass
+	def eval(self, frame):
+		return self
 
 
 @dynamic_extend(_ast.Or)

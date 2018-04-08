@@ -30,30 +30,7 @@ from collections import defaultdict
 from itertools import imap
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN, NT_DUMP
 from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
-
-
-class Scope(object):
-	def __init__(self, type, name, lookup, locals):
-		self.type = type
-		self.name = name
-		self.lookup = lookup
-		self.locals = locals
-
-	def identify(self, name):
-		return self.lookup.get(name, NT_UNKNOWN)
-
-	def addLocals(self, name, node):
-		self.locals[name] = node
-
-	def batchRemoveLocals(self, names):
-		for name in names:
-			if name and name in self.locals:
-				del self.locals[name]
-
-	def __repr__(self):
-		msg = '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])
-		msg = '%s\n%s' % (msg, self.locals)
-		return msg
+from eval import PyScope
 
 
 class BuilderScope(object):
@@ -81,7 +58,7 @@ class BuilderScope(object):
 	def dump(self):
 		names = self.defs.keys() + self.uses.keys() + self.globalvars.keys()
 		lookup = {name : self.identify(name) for name in names}
-		return Scope(self.type, self.name, lookup, self.locals)
+		return PyScope(self.type, self.name, lookup, self.locals)
 
 	def addDef(self, name):
 		self.defs[name] = 1

@@ -4,6 +4,9 @@
 class MException(Exception):
 	pass
 
+class MEvalException(Exception):
+	pass
+
 
 class MLoadNameException(Exception):
 	pass

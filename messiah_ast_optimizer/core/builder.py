@@ -1,7 +1,10 @@
 # -*- coding:utf-8 -*-
 """
-1) 2018.3.6: 需要提供一个获取import的文件路径的功能
-2) 2018.3.29: 现在要考虑rely module怎么处理
+功能：
+1) 重新构建ast树， 设置parent等
+2）决定所有变量的作用域
+3）对于一些一般不会外部变的locals变量，记录到sc_consts
+4) functionDef里的sc_consts是可信的， 但是ClasssDef和Module里面的可能会被动态修改（显式Global被修改会从sc_consts中移除）
 """
 
 import os
@@ -13,6 +16,8 @@ import nodes
 from context import BuilderScope
 from itertools import imap
 from const import ST_MODULE, ST_CLASS, ST_FUNCTION, ST_GENERATOR
+from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN, NT_DUMP
+
 
 
 class ModuleBuilder(object):
@@ -37,6 +42,10 @@ class ModuleBuilder(object):
 	@property
 	def parentScope(self):
 		return self.scopes[-2]
+
+	@property
+	def rootScope(self):
+		return self.scopes[0]
 
 	def build(self, node, fqname, file, path, is_rely=True):
 		self.is_rely = is_rely
@@ -174,18 +183,21 @@ class ModuleBuilder(object):
 			self.scope.addDef(node.id)
 
 	def visit_Assign(self, node):
-		if not self.enableStaticLocals():
-			return self.genricVisit(node)
-
 		scope = self.scope
+		enable_locals = self.enableStaticLocals()
 		for target in node.targets:
 			for name in utils.get_names(target, pure_only=False) or []:
-				scope.addLocals(name, node)
+				if scope.identify(name) == NT_GLOBAL_EXPLICIT:
+					self.rootScope.removeLocals(name)
+				else:
+					enable_locals and scope.addLocals(name, node)
 		self.genricVisit(node)
 
 	def visit_AugAssign(self, node):
+		scope = self.scope
+		enable_locals = self.enableStaticLocals()
 		if isinstance(node.target, ast.Name):
-			self.scope.addLocals(node.target.id, node)
+			self.scope.removeLocals(node.target.id)
 		self.genricVisit(node)
 
 	def visit_Delete(self, node):
@@ -253,6 +265,7 @@ if __name__ == '__main__':
 	# print finder.find(node)
 
 	finder = ModuleBuilder()
-	finder.build(node, is_rely=True)
+	finder.build(node, '', '', '', is_rely=True)
+	# print node.body[2].body[0].scope
 	print node.scope
 	# print node.body[0].body[1].scope.show()

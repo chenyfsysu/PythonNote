@@ -10,8 +10,8 @@ import sys
 import imp
 import ast
 import utils
+import builder
 import exceptions
-from builder import ModuleBuilder
 
 
 class Singleton(object):
@@ -30,7 +30,7 @@ class ModuleLoader(Singleton):
 		self.root = None
 		self.path = []
 		self.modules = {}
-		self.builder = ModuleBuilder()
+		self.builder = builder.ModuleBuilder()
 
 	def setPath(self, path):
 		self.path = path

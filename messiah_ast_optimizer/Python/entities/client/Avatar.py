@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
-from avtmembers.impPokemon import AvatarMember
 import const
+import avtmembers
 
 class iCombatUnit(object, ):
 
@@ -41,17 +41,20 @@ class AvatarModelComponent(object, ):
         return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
 @with_tag('IsAvatar')
-@Components(AvatarModelComponent, AvatarRoleComponent, AvatarMember)
+@Components(AvatarModelComponent, AvatarRoleComponent, avtmembers.importall())
 class Avatar(ClientAreaEntity, ):
     Property('school')
-    Property('uid')
-    Property('hates', AvatarHates)
-    Property('xw')
-    Property('origin_account', '')
-    Property('body')
-    Property('combatPokemonId', '')
-    Property('shadowPokemonId', '')
     USE = 'cCombatUnit'
+
+
+    def checkSFXVisible(self):
+        return True
+
+    def getCombatPokemon(self):
+        return EntityManager.getentity(self.combatPokemonId)
+
+    def useSkill(self):
+        print 'cCombatUnit'
 
     def getModelScale(self):
         if self.monster_shapeshift:
@@ -64,16 +67,13 @@ class Avatar(ClientAreaEntity, ):
     def doAttack(self):
         print 'iCombatUnit'
 
-    def checkSFXVisible(self):
-        return True
-
     def onClick(self):
         p = GlobalData.p
         if p.isInSurvivalBattle():
             return
         if (self.id != p.id):
             if (not p.canLockTarget(self)):
-                p.popNotificationMsg(1001)  #const.SKILL_ID=1001
+                p.popNotificationMsg(const.SKILL_ID)
             else:
                 p.lockTarget(self)
             if (TasteQuery.tasteInActDuration and self.buffs.tasteCarrierNo()):
@@ -83,12 +83,6 @@ class Avatar(ClientAreaEntity, ):
         if self.isInCJBattle():
             return True
         return False
-
-    def useSkill(self):
-        print 'cCombatUnit'
-
-    def getCombatPokemon(self):
-        return EntityManager.getentity(self.combatPokemonId)
 
     def checkTopNameVisible(self):
         return cRole.checkTopNameVisible.im_func(self)

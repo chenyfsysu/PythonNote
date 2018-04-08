@@ -154,7 +154,7 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 		self.notifyVisitFile(fullpath, relpath)
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 
-		ModuleLoader().setPath(['entities/client', 'entities/common'])
+		ModuleLoader().setPath(['Python/entities/client', 'Pythonentities/common', 'Python/engine'])
 		tree = ModuleLoader().reloadRoot(fullpath)
 		tree = self._walk(tree)
 
