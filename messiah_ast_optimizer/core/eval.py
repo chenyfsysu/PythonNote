@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN, NT_DUMP
+from exception import MEvalException
 import ast
 
 
@@ -58,16 +59,26 @@ class PyCell(object):
 
 
 class PyFunction(object):
-	def __init__(self, closure, defaults, globals):
+	def __init__(self, node, globals, defaults, closure, name, dict, weakreflist, module):
 		self.is_bad = False # 如果有不能解析的内容，则会设置为is_bad
 
-		self.func_closure = closure
-		self.func_defaults = defaults
+		self.func_node = node
 		self.func_globals = globals
+		self.func_defaults = defaults
+		self.func_closure = closure
+		self.func_name = name
+		self.func_dict = dict
+		self.func_weakreflist = weakreflist
+		self.func_module = module
 
 	def setBad(self, bad):
 		self.is_bad = bad
 
+	def eval(self, *args, **kwargs):
+		if not self.func_node:
+			raise MEvalException('eval func with not func node')
+
+		return self.func_node.eval(func, *args, **kwargs)
 
 class PyMethod(object):
 	def __init__(self, inst, func, cls):

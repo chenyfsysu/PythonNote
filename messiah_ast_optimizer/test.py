@@ -12,5 +12,4 @@ class A(object):
 		global B
 		B = 100
 
-import sys
-print sys._getframe()
+print dir(wrapper)
