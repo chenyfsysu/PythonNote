@@ -11,7 +11,9 @@ import imp
 import ast
 import utils
 import builder
-import exceptions
+import modules
+
+from exception import MImportException
 
 
 class Singleton(object):
@@ -30,14 +32,27 @@ class ModuleLoader(Singleton):
 		self.root = None
 		self.path = []
 		self.modules = {}
-		self.builder = builder.ModuleBuilder()
+		self.standards = {}
+		self.builtins = {}
+		self.engines = {}
 
-	def setPath(self, path):
-		self.path = path
+		self.builder = builder.ModuleBuilder()
 
 	def clear(self):
 		self.root = None
 		self.modules = {}
+
+	def setPath(self, path):
+		self.path = path
+
+	def setupStandrad(self, name, module):
+		self.standards[name] = module
+
+	def setupBuiltin(self, name, module):
+		self.builtins[name] = module
+
+	def setupEngine(self, name, module):
+		self.engines[name] = module
 
 	def reloadRoot(self, fullpath):
 		self.clear()
@@ -70,28 +85,38 @@ class ModuleLoader(Singleton):
 
 		return '.'.join(pname.split(os.path.sep)).rstrip('.py')
 
-	def load(self, name, fromlist=None, level=-1, caller=None):
+	def load(self, name, fromlist=None, level=-1, caller=None, lazy=False):
+		if lazy and fromlist:
+			raise MImportException('lazy and fromlist are defined')
+
 		if not caller:
 			caller = self.root
 		try:
-			if name in self.modules:
-				m = self.modules[name]
+			if name in self.builtins:
+				m = self.builtins[name]
+			elif name in self.standards:
+				m = self.standards[name]
+			elif name in self.engines:
+				m = self.engines[name]
 			else:
-				m = self.loadModuleLevel(name, fromlist, level, caller)
+				m = self.loadModuleLevel(name, fromlist, level, caller, lazy)
 		except ImportError as e:
-			print e
-			m = None
+			raise MImportException('Can not import module name: %s' % name)
 		else:
 			if not fromlist:
 				return m
+
+			if m.__internal__:
+				raise MImportException('Internal module is not allowed fromist')
+
 			m = self.ensureFromlist(m, fromlist)
 
 		return m
 
-	def loadModuleLevel(self, name, fromlist, level, caller):
+	def loadModuleLevel(self, name, fromlist, level, caller, lazy=False):
 		parent = self.getParent(caller, level=level)
 		q, tail = self.loadHead(parent, name)
-		m = self.loadTail(q, tail)
+		m = self.loadTail(q, tail, lazy)
 
 		return m
 
@@ -132,7 +157,7 @@ class ModuleLoader(Singleton):
 			head = name
 			tail = ""
 		if parent:
-			qname = "%s.%s" % (parent.name, head)
+			qname = "%s.%s" % (parent.__name__, head)
 		else:
 			qname = head
 		q = self.importModule(head, qname, parent)
@@ -146,14 +171,14 @@ class ModuleLoader(Singleton):
 				return q, tail
 		raise ImportError, "No module named " + qname
 
-	def loadTail(self, q, tail):
+	def loadTail(self, q, tail, lazy=False):
 		m = q
 		while tail:
 			i = tail.find('.')
 			if i < 0: i = len(tail)
 			head, tail = tail[:i], tail[i+1:]
 			mname = "%s.%s" % (m.__name__, head)
-			m = self.importModule(head, mname, m)
+			m = self.importModule(head, mname, m, lazy=lazy)
 			if not m:
 				raise ImportError, "No module named " + mname
 		return m
@@ -196,15 +221,19 @@ class ModuleLoader(Singleton):
 					modules[mod] = mod
 		return modules.keys()
 
-	def importModule(self, partname, fqname, parent):
+	def importModule(self, partname, fqname, parent, lazy=False):
 		if fqname in self.modules:
-			return self.modules[fqname]
+			m = self.modules[fqname]
+			if not lazy and m.__incomplete__:
+				self.completeModule(m)
+			return m
+
 		if parent and parent.__path__ is None:
 			return None
 
 		fp, pathname, stuff = self.findModule(partname, parent and parent.__path__, parent)
 		try:
-			m = self.loadModule(fqname, fp, pathname, stuff)
+			m = self.loadModule(fqname, fp, pathname, stuff, lazy=lazy)
 		finally:
 			fp and fp.close()
 		return m
@@ -222,29 +251,41 @@ class ModuleLoader(Singleton):
 		return imp.find_module(name, path)
 
 
-	def loadModule(self, fqname, fp, pathname, desc):
+	def loadModule(self, fqname, fp, pathname, desc, lazy=False):
 		suffix, mode, type = desc
 
 		mod = path = None
 		if type == imp.PKG_DIRECTORY:
 			path = [pathname]
 			fp, pathname, desc = self.findModule("__init__", path)
-			mod = self.addModule(fp, fqname, pathname, path=path)
+			mod = self.addModule(fp, fqname, pathname, path=path, lazy=lazy)
 			fp and fp.close()
 
 		elif type == imp.PY_SOURCE:
-			mod = self.addModule(fp, fqname, pathname, path=path)
+			mod = self.addModule(fp, fqname, pathname, path=path, lazy=lazy)
+
+		elif type == imp.C_BUILTIN:
+			raise ImportError('Builtin module %s is not setup' % fqname)
 
 		return mod
 
-	def addModule(self, fp, fqname, file, path=None):
-		mod = ast.parse(fp.read())
-		self.builder.build(mod, fqname, file, path, is_rely=True)
+	def addModule(self, fp, fqname, file, path=None, lazy=False):
+		if lazy:
+			node = ast.Module(body=[])
+			node.__preinit__(fqname, file, path, incomplete=True)
+		else:
+			mod = ast.parse(fp.read()) 
+			self.builder.build(mod, fqname, file, path, is_rely=True)
 		self.modules[fqname] = mod
 
 		return mod
 
-	
+	def completeModule(self, module):
+		self.builder.build(module, fqname, file, path, is_rely=True)
+
+		return module
+
+
 if __name__ == '__main__':
 	import nodes
 

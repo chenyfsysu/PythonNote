@@ -6,6 +6,8 @@
 import _ast
 import inspect
 import itertools
+import builtin
+import inspect
 
 from module_loader import ModuleLoader
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN
@@ -33,8 +35,10 @@ class Node(object):
 		pass
 
 	def eval(self, *args):
-		print '111111111111', self
-		raise NotImplementedError
+		raise MEvalException('Node Class of %s did not define eval function' % self.__class__.__name__)
+
+	def getattr(self, name):
+		raise MEvalException('Node Class of %s did not define getattr function' % self.__class__.__name__)
 
 	def nModule(self):
 		module = self
@@ -111,12 +115,16 @@ class NamespaceProvider(object):
 
 @dynamic_extend(_ast.alias)
 class alias(Node):
-	pass
+	def inferName(self):
+		name, asname = self.name, self.asname
+		return asname or name[:name.find('.')] if '.' in name else name
 
 
 @dynamic_extend(_ast.arguments)
 class arguments(Node):
-	pass
+	
+	def needArgs(self):
+		return any((self.args, self.vararg, self.kwarg, self.defaults))
 
 
 @dynamic_extend(_ast.boolop)
@@ -152,7 +160,7 @@ class expr_context(Node):
 @dynamic_extend(_ast.keyword)
 class keyword(Node):
 	def eval(self, frame):
-		return {self.arg: self.value.eval(frame)}
+		return [self.arg, self.value.eval(frame)]
 
 
 @dynamic_extend(_ast.mod)
@@ -242,7 +250,12 @@ class Assign(Node, NamespaceProvider):
 
 @dynamic_extend(_ast.Attribute)
 class Attribute(Node):
-	pass
+	
+	def eval(self, frame):
+		if isinstance(self.ctx, _ast.Store):
+			raise MEvalException('cannot eval Attribute with ctx Store')
+
+		return self.value.eval(frame).getattr(self.attr)
 
 
 @dynamic_extend(_ast.AugAssign)
@@ -293,23 +306,48 @@ class Break(Node):
 
 @dynamic_extend(_ast.Call)
 class Call(Node):
-	def eval(self, frame=None):
-		if not frame:
-			frame = PyFrame(dict(self.nModule().scope.locals), dict(self.nScope().scope.locals), {})
+	def eval(self, frame):
+		func = self.func.eval(frame)
 
-		func = self.func.load()
-		if not isinstance(func, _ast.FunctionDef):
-			raise MEvalException('cannot eval NonFunctionDef')
+		if isinstance(func, _ast.FunctionDef):
+			return self._eval(frame, func)
+		elif getattr(func, '__builtin_delegate__', False):
+			return self._evalDelegate(frame, func)
+		else:
+			raise MEvalException('cannot eval Call with NonFunctionDef or BuiltinDelegate')
+
+	def _eval(self, frame, func):
+		if any([self.args, self.keywords, self.starargs, self.kwargs]):
+			raise MEvalException('cannot eval Call with arguments')
 
 		if any((cell not in frame.f_cells for cell in func.scope.cells())):
 			raise MEvalException('closure was not given, eval call cannot continue')
 
-		args = [arg.eval(frame) for arg in self.args]
-		keywords = [kw.eval(frame) for kw in self.keywords]
-		starargs = self.starargs.eval(frame) if self.starargs else None
-		kwargs = self.kwargs.eval(frame) if self.kwargs else None
+		# args = [arg.eval(frame) for arg in self.args]
+		# keywords = [kw.eval(frame) for kw in self.keywords]
+		# starargs = self.starargs.eval(frame) if self.starargs else None
+		# kwargs = self.kwargs.eval(frame) if self.kwargs else None
 
-		return func.eval(args, keywords, starargs, kwargs)
+		return func.eval(frame)
+
+	def _evalDelegate(self, frame, func):
+		posargs, keyargs = self._evalArgs(frame)
+
+		return func(frame, *posargs, **keyargs)
+
+	def _evalArgs(self, frame):
+		posargs = [arg.eval(frame) for arg in self.args]
+		keyargs = dict([kw.eval(frame) for kw in self.keywords])
+
+		if self.starargs:
+			starargs = self.starargs.eval(frame)
+			posargs.extend(starargs)
+
+		if self.kwargs:		
+			kwargs = self.kwargs.eval(frame)
+			keyargs.update(kwargs)
+
+		return posargs, keyargs
 
 
 @dynamic_extend(_ast.ClassDef)
@@ -329,7 +367,7 @@ class ClassDef(ScopeNode):
 				else:
 					break
 			if not merge:
-				raise MMroResolutionException('Cannot create consisten method resolution')
+				raise MMroResolutionException('Cannot create consistent method resolution')
 			mro.append(merge)
 			for seq in seqs:
 				merge in seq and seq.remove(merge)
@@ -486,12 +524,22 @@ class FunctionDef(ScopeNode):
 	def __postinit__(self):
 		self.py_func = None
 
-	def eval(self, args, keywords, starargs, kwargs):
+	def eval(self, frame):
 		if self.decorator_list:
-			raise MEvalException('cannot eval function with decorator_list')
+			raise MEvalException('cannot eval FunctionDef with decorator_list')
 
+		if self.args.needArgs():
+			raise MEvalException('cannot eval FunctionDef with arguments')
 
-		print '111111111', args, keywords, starargs, kwargs
+		frame = PyFrame({}, self.nModule().scope.locals, builtin.Builtin.get())
+
+		for body in self.body:
+			result = body.eval(frame)
+			if isinstance(body, _ast.Return):
+				return result
+
+	def evalCall(self, args, keywords, starargs, kwargs):
+		pass
 
 	def getCallArgs(self, args, keywords, starargs, kwargs):
 		pass
@@ -539,6 +587,9 @@ class Import(Node, NamespaceProvider):
 		name = self.n_lookups.get(name, '')
 		return self.nModule().importModule(name) if name else None
 
+	def findModule(self, name):
+		return self.nModule().findModule(name)
+
 
 @dynamic_extend(_ast.ImportFrom)
 class ImportFrom(Node, NamespaceProvider):
@@ -551,6 +602,9 @@ class ImportFrom(Node, NamespaceProvider):
 	def lookup(self, name):
 		name = self.n_lookups.get(name, '')
 		return self.nModule().importModule(self.module, fromlist=name, level=self.level) if name else None
+
+	def findModule(self, name):
+		return self.nModule().findModule(self.module, level=self.level)
 
 
 @dynamic_extend(_ast.In)
@@ -628,11 +682,22 @@ class Module(ScopeNode):
 	def importModule(self, name, fromlist=None, level=-1):
 		return ModuleLoader().load(name, fromlist, level, caller=self)
 
-	def __preinit__(self, name, file, path):
+	def findModule(self, name, level=-1):
+		return ModuleLoader().load(name, fromlist=None, level=level, caller=self, lazy=True)
+
+	def __preinit__(self, name, file, path, internal=False, incomplete=False):
 		Node.__preinit__.im_func(self, None)
 		self.__name__ = name
 		self.__file__ = file
 		self.__path__ = path
+		self.__internal__ = internal
+		self.__incomplete__ = incomplete
+
+	def getattr(self, name):
+		if name not in self.scope.locals:
+			raise MEvalException('Module object has no attribute %s' % name)
+
+		return self.scope.locals[name]
 
 	def nModule(self):
 		return self
@@ -667,11 +732,14 @@ class Name(Node):
 		elif nt in (NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT):
 			ref = frame.loadGlobal(self.id)
 
-		if issubclass(ref.__excls__, NamespaceProvider):
-			return ref.lookup(self.id)
-
 		if not ref:
 			raise MEvalException('Cannot Load name %s' % self.id)
+
+		if getattr(ref, '__builtin_delegate__', False):
+			return ref
+
+		if issubclass(ref.__excls__, NamespaceProvider):
+			return ref.lookup(self.id)
 
 		return ref
 
@@ -739,7 +807,8 @@ class Repr(Node):
 
 @dynamic_extend(_ast.Return)
 class Return(Node):
-	pass
+	def eval(self, frame):
+		return self.value.eval(frame)
 
 
 @dynamic_extend(_ast.Set)
@@ -764,7 +833,11 @@ class Store(Node):
 
 @dynamic_extend(_ast.Str)
 class Str(Node):
-	pass
+	def eval(self, frame):
+		return self
+
+	def asConstant(self):
+		return self.s
 
 
 @dynamic_extend(_ast.Sub)
@@ -794,7 +867,11 @@ class TryFinally(Node):
 
 @dynamic_extend(_ast.Tuple)
 class Tuple(Node):
-	pass
+	def eval(self, frame):
+		if isinstance(self.ctx, _ast.Store):
+			raise MEvalException('eval name of Store type')
+
+		return tuple([elt.eval(frame) for elt in self.elts])
 
 
 @dynamic_extend(_ast.UAdd)

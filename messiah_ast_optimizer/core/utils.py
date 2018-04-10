@@ -9,6 +9,7 @@ from collections import defaultdict
 
 def enum(*sequential, **named):
 	enums = dict(zip(sequential, range(len(sequential))), **named)
+	enums['__enum__'] = enums.keys()
 	return type('Enum', (), enums)
 
 

@@ -82,6 +82,8 @@ class ModuleBuilder(object):
 	def visit_Module(self, node):
 		self.pushScope(node, ST_MODULE)
 		self.genricVisit(node)
+
+		self.scope.addLocals('__module__', node)
 		self.popScope()
 
 	def visit_ClassDef(self, node):

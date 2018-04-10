@@ -98,16 +98,16 @@ class AstScopeMixin(IVisitor):
 		scope = self.scope
 		for alias in node.names:
 			name, asname = alias.name, alias.asname
-			if name != "*":
-				scope.addLocals(name, node)
+			name = name[:name.find('.')] if '.' in name else name
+			scope.addLocals(asname or name, node)
 		return node
 
 	def postvisit_ImportFrom(self, node):
 		scope = self.scope
 		for alias in node.names:
 			name, asname = alias.name, alias.asname
-			name = name[:name.find('.')] if '.' in name else name
-			scope.addLocals(asname or name, node)
+			if name != "*":
+				scope.addLocals(name, node)
 		return node
 
 	def postvisit_Delete(self, node):

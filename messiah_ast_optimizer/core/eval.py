@@ -32,7 +32,6 @@ class PyScope(object):
 		return msg
 
 
-
 class PyFrame(object):
 	def __init__(self, locals, globals, builtins=None, cells=None):
 		self.f_locals = locals		
@@ -44,7 +43,10 @@ class PyFrame(object):
 		return self.f_locals.get(name, None)
 
 	def loadGlobal(self, name):
-		return self.f_globals.get(name, None)
+		if name in self.f_globals:
+			return self.f_locals[name]
+
+		return self.f_builtins.get(name, None)
 
 	def loadDeref(self, name):
 		return self.f_cells.get(name, None)

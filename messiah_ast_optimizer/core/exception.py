@@ -4,6 +4,7 @@
 class MException(Exception):
 	pass
 
+
 class MEvalException(Exception):
 	pass
 
