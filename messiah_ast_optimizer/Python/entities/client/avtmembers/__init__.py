@@ -2,7 +2,4 @@
 
 
 def importall():
-	return (
-		__import__("impPokemon", globals()),
-		__import__("impCombat", globals()),
-	)
+    return (__import__('impPokemon', globals()))

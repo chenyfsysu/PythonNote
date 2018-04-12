@@ -43,6 +43,7 @@ class Visitor(IVisitor):
 
 	def __init__(self, optimizer=None):
 		self.optimizer = optimizer
+		self.logger = optimizer.getLogger(self.__class__.__name__)
 
 	def onEnter(self):
 		pass
@@ -60,9 +61,10 @@ class Visitor(IVisitor):
 class HostVisitor(object):
 	__metaclass__ = VisitorMeta
 
-	def __init__(self, rootpath):
+	def __init__(self, rootpath, optimizer):
 		super(HostVisitor, self).__init__()
 		self.rootpath = rootpath
+		self.logger = optimizer.getLogger(self.__class__.__name__)
 
 		self.previsitors = defaultdict(list)
 		self.visitors = defaultdict(list)

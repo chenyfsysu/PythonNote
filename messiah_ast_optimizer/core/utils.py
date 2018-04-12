@@ -3,6 +3,7 @@
 import os
 import ast
 import const
+import unparser
 import itertools
 from collections import defaultdict
 
@@ -38,6 +39,8 @@ def copy_lineno(node, new_node):
 def new_assignment(name, value):
 	name = ast.Name(id=name)
 	value = new_constant(value)
+
+	return ast.Assign(targets=[name], value=value)
 
 
 def new_constant(value, node=None):
@@ -146,9 +149,21 @@ def fold_binop(op, src, dst):
 	return cosnt.UNKNOW if cls not in const.BIN_OPERATOR else const.BIN_OPERATOR[cls](src, dst)
 
 
+def new_importfrom(module, name, asname, level=0, parent=None):
+	names = [ast.alias(name=name, asname=asname)]
+	node = ast.ImportFrom(module=module, names=names, level=level)
+	node.__preinit__(parent)
+	node.__postinit__()
+
+	return node
+
 def calc_augassign(src, op, value):
 	dst = utils.get_constant(node.value)
 	return const.UNKNOW if dst == const.UNKNOW else fold_binop(op, src, dst)
+
+
+def unparse_src(node):
+	return unparser.unparse(node)
 
 
 def set_comment(node, comment):

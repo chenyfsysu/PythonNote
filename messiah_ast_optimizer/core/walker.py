@@ -97,9 +97,8 @@ class AstScopeMixin(IVisitor):
 	def postvisit_Import(self, node):
 		scope = self.scope
 		for alias in node.names:
-			name, asname = alias.name, alias.asname
-			name = name[:name.find('.')] if '.' in name else name
-			scope.addLocals(asname or name, node)
+			name = alias.inferName()
+			scope.addLocals(name, node)
 		return node
 
 	def postvisit_ImportFrom(self, node):
@@ -121,12 +120,12 @@ class TokenizeWalker(HostVisitor):
 		tokenize.COMMENT: 'Comment'
 	}
 
-	def __init__(self, rootpath):
-		super(TokenizeWalker, self).__init__(rootpath)
+	def __init__(self, rootpath, optimizer):
+		super(TokenizeWalker, self).__init__(rootpath, optimizer)
 		self.context = None
 
 	def walk(self, fullpath, relpath):
-		print '>>>>>>>>>tokenize: %s' % relpath
+		self.logger.info('processing: %s', relpath)
 		self.notifyVisitFile(fullpath, relpath)
 
 		self.context = TokenizeContext(fullpath, relpath)
@@ -143,8 +142,8 @@ class TokenizeWalker(HostVisitor):
 
 
 class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
-	def __init__(self, rootpath):
-		super(VisitWalker, self).__init__(rootpath)
+	def __init__(self, rootpath, optimizer):
+		super(VisitWalker, self).__init__(rootpath, optimizer)
 		AstScopeMixin.__init__(self)
 		self.context = None
 		self.selfvisitors = defaultdict(list)
@@ -154,7 +153,7 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 		self.notifyVisitFile(fullpath, relpath)
 		self.context = AstContext(self.rootpath, relpath, '__main__')
 
-		ModuleLoader().setPath(['Python/entities/client', 'Pythonentities/common', 'Python/engine'])
+		ModuleLoader().setPath(['Python', 'Python/entities/client', 'Python/entities/common', 'Python/engine'])
 		tree = ModuleLoader().reloadRoot(fullpath)
 		tree = self._walk(tree)
 
@@ -192,8 +191,8 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 
 
 class TransformWalker(VisitWalker):
-	def __init__(self, rootpath):
-		super(TransformWalker, self).__init__(rootpath)
+	def __init__(self, rootpath, optimizer):
+		super(TransformWalker, self).__init__(rootpath, optimizer)
 
 	def _walk(self, node, parent=None):
 		key = node.__class__.__name__

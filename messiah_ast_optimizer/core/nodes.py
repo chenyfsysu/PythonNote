@@ -115,9 +115,10 @@ class NamespaceProvider(object):
 
 @dynamic_extend(_ast.alias)
 class alias(Node):
+	
 	def inferName(self):
 		name, asname = self.name, self.asname
-		return asname or name[:name.find('.')] if '.' in name else name
+		return asname or (name[:name.find('.')] if '.' in name else name)
 
 
 @dynamic_extend(_ast.arguments)
@@ -581,10 +582,13 @@ class Import(Node, NamespaceProvider):
 		Node.__preinit__.im_func(self, parent)
 
 	def __postinit__(self):
-		self.n_lookups = {alias.asname or alias.name: alias.name for alias in self.names}
+		self.as_lookups = {}
+		for alias in self.names:
+			if alias.asname:
+				self.as_lookups[alias.asname] = alias.name
 
 	def lookup(self, name):
-		name = self.n_lookups.get(name, '')
+		name = self.as_lookups[name] if name in self.as_lookups else name
 		return self.nModule().importModule(name) if name else None
 
 	def findModule(self, name):
@@ -597,14 +601,17 @@ class ImportFrom(Node, NamespaceProvider):
 		Node.__preinit__.im_func(self, parent)
 
 	def __postinit__(self):
-		self.n_lookups = {alias.asname or alias.name: alias.name for alias in self.names}
+		self.as_lookups = {}
+		for alias in self.names:
+			if alias.asname:
+				self.as_lookups[alias.asname] = alias.name
 
 	def lookup(self, name):
-		name = self.n_lookups.get(name, '')
-		return self.nModule().importModule(self.module, fromlist=name, level=self.level) if name else None
+		name = self.as_lookups[name] if name in self.as_lookups else name
+		return self.nModule().importModule(self.module, fromlist=name, level=self.level or -1) if name else None
 
-	def findModule(self, name):
-		return self.nModule().findModule(self.module, level=self.level)
+	def findModule(self):
+		return self.nModule().findModule(self.module, level=self.level or -1)
 
 
 @dynamic_extend(_ast.In)

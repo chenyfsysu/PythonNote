@@ -10,4 +10,4 @@ SRC = """
 def setup(loader):
 	module = ast.parse(SRC)
 	module.__preinit__('MEngine', '', None, internal=True)
-	loader.setupEngine('datetime', module)
+	loader.setupEngine('MEngine', module)

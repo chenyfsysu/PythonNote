@@ -170,10 +170,9 @@ class ModuleBuilder(object):
 
 	def visit_Import(self, node):
 		for alias in node.names:
-			name, asname = alias.name, alias.asname
-			name = name[:name.find('.')] if '.' in name else name
-			self.scope.addDef(asname or name)
-			self.enableStaticLocals() and self.scope.addLocals(asname or name, node)
+			name = alias.inferName()
+			self.scope.addDef(name)
+			self.enableStaticLocals() and self.scope.addLocals(name, node)
 
 	def visit_Global(self, node):
 		map(self.scope.addGlobal, node.names)

@@ -5,6 +5,7 @@ import scandir
 import unparser
 
 from walker import TokenizeWalker, VisitWalker, TransformWalker
+from mixins import LogHandlerMixin
 
 
 def OptimizeStep(*stepcls):
@@ -27,17 +28,20 @@ def OptimizeStep(*stepcls):
 	return _OptimizeStep
 
 
-class MessiahOptimizer(object):
+class MessiahOptimizer(LogHandlerMixin):
 	def __init__(self, path, ignore_dirs, ignore_files):
+		super(MessiahOptimizer, self).__init__()
+
 		self.path = path
+		self.logger = self.getLogger('MessiahOptimizer')
 		self.ignore_dirs = [os.path.normpath(d) for d in ignore_dirs]
 		self.ignore_files = [os.path.normpath(f) for f in ignore_files]
 		self.file = None
 		self.filter_files = {}
 
-		self.tokenize_walker = TokenizeWalker(path)
-		self.visit_walker = VisitWalker(path)
-		self.transform_walker = TransformWalker(path)
+		self.tokenize_walker = TokenizeWalker(path, self)
+		self.visit_walker = VisitWalker(path, self)
+		self.transform_walker = TransformWalker(path, self)
 
 		self.tokenizers = []
 		self.visitors = []
@@ -65,6 +69,13 @@ class MessiahOptimizer(object):
 
 	def filterOptimizeFiles(self):
 		self.filter_files = {}
+
+		if os.path.isfile(self.path):
+			head, tail = os.path.split(self.path)
+			self.filter_files[self.path] = tail
+			self.path = head
+			return
+
 		for root, dirs, files in scandir.walk(self.path, topdown=True):
 			dirs[:] = [d for d in dirs if os.path.normpath(os.path.join(root, d)) not in self.ignore_dirs]
 
