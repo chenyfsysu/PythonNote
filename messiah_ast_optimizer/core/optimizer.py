@@ -5,7 +5,7 @@ import scandir
 import unparser
 
 from walker import TokenizeWalker, VisitWalker, TransformWalker
-from mixins import LogHandlerMixin
+from mixins import ConfigHandlerMixin, LogHandlerMixin
 
 
 def OptimizeStep(*stepcls):
@@ -28,14 +28,15 @@ def OptimizeStep(*stepcls):
 	return _OptimizeStep
 
 
-class MessiahOptimizer(LogHandlerMixin):
-	def __init__(self, path, ignore_dirs, ignore_files):
-		super(MessiahOptimizer, self).__init__()
+class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
+	def __init__(self, path, setting, cmd_settings):
+		ConfigHandlerMixin.__init__(self, setting, cmd_settings)
+		LogHandlerMixin.__init__(self)
 
 		self.path = path
 		self.logger = self.getLogger('MessiahOptimizer')
-		self.ignore_dirs = [os.path.normpath(d) for d in ignore_dirs]
-		self.ignore_files = [os.path.normpath(f) for f in ignore_files]
+		self.ignore_dirs = [os.path.normpath(d) for d in self.config.IGNORE_DIRS]
+		self.ignore_files = [os.path.normpath(f) for f in self.config.IGNORE_FILES]
 		self.file = None
 		self.filter_files = {}
 

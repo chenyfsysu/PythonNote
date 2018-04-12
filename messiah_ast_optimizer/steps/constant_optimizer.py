@@ -5,15 +5,14 @@ from collections import defaultdict
 from core import utils
 
 
-import setting
 import ast
 import os
 
 Constant = ('True', 'False', 'None')
 
 
-def is_inline_file(root, file):
-	return any(utils.is_same_file(os.path.join(root, f), file) for f in setting.INLINE_CONST_FILES)
+def is_inline_file(root, file, const_files):
+	return any(utils.is_same_file(os.path.join(root, f), file) for f in const_files)
 
 
 class ConstantTokenizer(MessiahStepTokenizer):
@@ -26,10 +25,10 @@ class ConstantTokenizer(MessiahStepTokenizer):
 		self.optimizer and self.optimizer.storeData(self.__class__, self.inline_consts)
 
 	def visit_Comment(self, token, srow_scol, erow_ecol, line, context):
-		if context.__relpath__ not in setting.CONFIG_INLINE_CONST:
+		if context.__relpath__ not in self.optimizer.config.CONFIG_INLINE_CONST:
 			return
 
-		setting.CONST_INLINE_TAG in token and self.inline_consts[self._file].append(srow_scol[0])
+		self.optimizer.config.CONST_INLINE_TAG in token and self.inline_consts[self._file].append(srow_scol[0])
 
 
 class ConstantVisitor(MessiahStepVisitor):
@@ -45,10 +44,10 @@ class ConstantVisitor(MessiahStepVisitor):
 		self.optimizer and self.optimizer.storeData(self.__class__, self.constants)
 
 	def visit_Assign(self, node, context):
-		if context.__relpath__  not in setting.INLINE_CONST_FILES:
+		if context.__relpath__  not in self.optimizer.config.INLINE_CONST_FILES:
 			return
 
-		if context.__relpath__  not in setting.INLINE_CONST and \
+		if context.__relpath__  not in self.optimizer.config.INLINE_CONST and \
 			utils.get_lineno(node) not in self.inline_consts.get(context.__relpath__ , []):
 			return
 
@@ -70,9 +69,9 @@ class ConstantVisitor(MessiahStepVisitor):
 		return False
 
 	def getConstName(self, path):
-		if path in setting.INLINE_CONST:
-			return setting.INLINE_CONST[path]
-		return setting.CONFIG_INLINE_CONST[path]
+		if path in self.optimizer.config.INLINE_CONST:
+			return self.optimizer.config.INLINE_CONST[path]
+		return self.optimizer.config.CONFIG_INLINE_CONST[path]
 
 
 class ConstantTransformer(MessiahStepTransformer):
@@ -92,7 +91,7 @@ class ConstantTransformer(MessiahStepTransformer):
 			return node
 
 		refer = node.value.load(only_locals=False)
-		if isinstance(refer , ast.Module) and is_inline_file(context.__rootpath__, refer.__file__):
+		if isinstance(refer , ast.Module) and is_inline_file(context.__rootpath__, refer.__file__, self.optimizer.config.INLINE_CONST_FILES):
 			constant = self.constants[attrid]
 			node = utils.new_constant(constant, node)
 			utils.set_comment(node, '%s.%s=%s' % (attrid[0], attrid[1], constant))

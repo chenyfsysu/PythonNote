@@ -1,0 +1,23 @@
+2018-04-13 00:22:29,989 - TokenizeWalker - INFO - processing: entities\common\const.py
+2018-04-13 00:22:29,994 - TokenizeWalker - INFO - processing: engine\common\Entity.py
+2018-04-13 00:22:29,999 - TokenizeWalker - INFO - processing: engine\common\IpUtils.py
+2018-04-13 00:22:30,000 - TokenizeWalker - INFO - processing: engine\common\EntityFactory.py
+2018-04-13 00:22:30,002 - TokenizeWalker - INFO - processing: engine\common\EntityManager.py
+2018-04-13 00:22:30,003 - TokenizeWalker - INFO - processing: engine\common\classutils.py
+2018-04-13 00:22:30,010 - TokenizeWalker - INFO - processing: entities\client\avtmembers\impPokemon.py
+2018-04-13 00:22:30,012 - TokenizeWalker - INFO - processing: entities\common\pokemon\__init__.py
+2018-04-13 00:22:30,013 - TokenizeWalker - INFO - processing: engine\common\JsonConfig.py
+2018-04-13 00:22:30,013 - TokenizeWalker - INFO - processing: engine\common\EntityScanner.py
+2018-04-13 00:22:30,015 - TokenizeWalker - INFO - processing: entities\client\avtmembers\__init__.py
+2018-04-13 00:22:30,016 - TokenizeWalker - INFO - processing: engine\common\__init__.py
+2018-04-13 00:22:30,016 - TokenizeWalker - INFO - processing: engine\common\IdManager.py
+2018-04-13 00:22:30,017 - TokenizeWalker - INFO - processing: engine\common\RpcMethodArgs.py
+2018-04-13 00:22:30,023 - TokenizeWalker - INFO - processing: entities\client\Avatar.py
+2018-04-13 00:22:30,025 - TokenizeWalker - INFO - processing: engine\common\mobilecommon.py
+2018-04-13 00:22:30,026 - TokenizeWalker - INFO - processing: engine\common\rpcdecorator.py
+2018-04-13 00:22:30,029 - TokenizeWalker - INFO - processing: engine\common\GameServerConsole.py
+2018-04-13 00:22:30,029 - TokenizeWalker - INFO - processing: entities\common\pokemon\pconst.py
+2018-04-13 00:22:30,029 - TokenizeWalker - INFO - processing: engine\common\Crontab.py
+2018-04-13 00:22:30,032 - TokenizeWalker - INFO - processing: engine\common\RpcIndex.py
+2018-04-13 00:22:30,275 - ComponentTransformer - DEBUG - Start merge class Avatar
+2018-04-13 00:22:30,276 - ComponentTransformer - WARNING - Merge was skip because inherit AvatarRoleComponent in Python\entities\client\Avatar.py

@@ -5,6 +5,10 @@ class MException(Exception):
 	pass
 
 
+class MConfigException(Exception):
+	pass
+
+
 class MEvalException(Exception):
 	pass
 

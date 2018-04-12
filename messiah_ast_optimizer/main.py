@@ -1,24 +1,22 @@
 # -*- coding:utf-8 -*-
 
-from core.executor import OptimizeExecutor
-from optimize import Optimizer
-import argparse
 import sys
 
+from core.executor import OptimizeExecutor  
+from core.optimizer import MessiahOptimizer, OptimizeStep
+from steps.constant_optimizer import ConstantOptimizeStep
+from steps.inline_optimizer import InlineOptimizeStep
+from steps.component_optimizer import ComponentOptimizeStep
 
-sys.path.append('lib')  
+sys.path.append('lib')
 
 
-def execute(path, ignore_dirs, ignore_files):
-	executor = OptimizeExecutor(Optimizer(path, ignore_dirs, ignore_files))
-	executor.execute()
+@OptimizeStep(ConstantOptimizeStep, InlineOptimizeStep, ComponentOptimizeStep)
+class Optimizer(MessiahOptimizer):
+	pass
 
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	parser.add_argument('path', help='Path to optimize')
-	parser.add_argument('--ignore_dirs', nargs='*', help='Set ignore directory')
-	parser.add_argument('--ignore_files', nargs='*', help='Set ignore directory')
-	args = parser.parse_args()
+	executor = OptimizeExecutor(Optimizer)
+	executor.execute()
 
-	execute(args.path, args.ignore_dirs or [], args.ignore_files or [])

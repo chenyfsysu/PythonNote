@@ -2,25 +2,18 @@
 
 import os
 
+"""GLOBAL"""
+LOG_LEVEL = 0
 
-CLEINT_PATHS = [
-	'client',
-	'common'
-]
+IGNORE_DIRS = []
+IGNORE_FILES = []
 
-SERVER_PATHS = [
-	'server',
-	'common'
-]
-
-
-def get_loader_path(self, root):
-	if root.startswith('server'):
-		return SERVER_PATHS
-
-	return CLEINT_PATHS
+SYS_PATH_MAPPING = {
+	'Python/common/client': ['Python/', 'Python/entities/client', 'Python/entities/common', 'Python/engine']
+}
 
 
+"""CONST OPTIMIZER"""
 # 直接inline的Constant
 INLINE_CONST = {
 	os.path.normpath('common/const.py'): 'const',
