@@ -26,6 +26,10 @@ def is_same_file(src, dst):
 	return os.stat(src) == os.stat(dst)
 
 
+def format_path(root, path):
+	return os.path.normpath(os.path.join(root, path))
+
+
 def get_lineno(node):
 	return getattr(node, 'lineno', -1)
 
@@ -72,6 +76,8 @@ def new_constant(value, node=None):
 		raise TypeError("unknown type: %s" % type(value).__name__)
 
 	node and copy_lineno(node, new_node)
+	new_node.__preinit__(parent=node.parent if node else node.parent)
+	new_node.__postinit__()
 	return new_node
 
 

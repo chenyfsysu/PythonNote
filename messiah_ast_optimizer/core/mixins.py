@@ -1,7 +1,9 @@
 # -*- coding:utf-8 -*-
 
-import logging
+import os
 import time
+import logging
+import utils
 
 from exception import MConfigException
 
@@ -27,24 +29,50 @@ class LogHandlerMixin(object):
 
 
 class Config(object):
-	def __init__(self, setting):
+	def __init__(self, setting, overide):
+		self.names = set()
 		for name in dir(setting):
-			val = getattr(setting, name)
-			setattr(self, name, val)
+			if name.isupper():
+				setattr(self, name, getattr(setting, name))
+				self.names.add(name)
+		self.overide(overide)
 
 	def overide(self, settings):
 		for name, setting in settings.iteritems():
-			setattr(self, name, setting)
+			if name .isupper():
+				setattr(self, name, setting)
+				self.names.add(name)
 
 
 class ConfigHandlerMixin(object):
-	def __init__(self, setting, cmd_settings):
-		self.config = Config(setting)
-		self.config.overide(cmd_settings)
+	def __init__(self, root, setting, cmd_settings):
+		self.config = Config(setting, cmd_settings)
 
-		if not self.config.SYS_PATH_MAPPING:
-			raise MConfigException('Setting of SYS_PATH_MAPPING must be specified to optimze')
+		self.check()
+		self.formatPath(root)
 
+	def check(self):
+		if not self.config.SYS_PATH_ROUTINE:
+			raise MConfigException('Setting of SYS_PATH_ROUTINE must be specified to optimze')
+
+	def formatPath(self, root):
+		self.config.IGNORE_DIRS = [utils.format_path(root, _path) for _path in self.config.IGNORE_DIRS]
+		self.config.IGNORE_FILES = [utils.format_path(root, _path) for _path in self.config.IGNORE_FILES]
+		self.config.INLINE_CONST = [utils.format_path(root, _path) for _path in self.config.INLINE_CONST]
+		self.config.CONFIG_INLINE_CONST = [utils.format_path(root, _path) for _path in self.config.CONFIG_INLINE_CONST]
+		self.config.INLINE_CONST_FILES = [utils.format_path(root, _path) for _path in self.config.INLINE_CONST_FILES]
+
+		routines = []
+		for path, sys_path in self.config.SYS_PATH_ROUTINE:
+			routines.append((utils.format_path(root, path), [utils.format_path(root, _path) for _path in sys_path]))
+		self.config.SYS_PATH_ROUTINE = routines
+
+	def getSysPath(self, file):
+		for dir, path in self.config.SYS_PATH_ROUTINE:
+			if utils.is_parent_dir(dir, file):
+				return path
+
+		raise MConfigException('file of %s is not define sys path' % file)
 
 
 class ModifyHandlerMixin(object):

@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 
+import _binascii
 import _cPickle
 import _datetime
 import _gc
@@ -14,6 +15,7 @@ import _zlib
 
 
 def setup(loader):
+	_binascii.setup(loader)
 	_cPickle.setup(loader)
 	_datetime.setup(loader)
 	_gc.setup(loader)

@@ -42,7 +42,7 @@ class ModuleLoader(Singleton):
         self.root = None
         self.modules = {}
 
-    def setPath(self, path):
+    def setupPath(self, path):
         self.path = path
 
     def setupStandrad(self, name, module):
@@ -283,9 +283,15 @@ class ModuleLoader(Singleton):
         return mod
 
     def completeModule(self, module):
-        self.builder.build(module, fqname, file, path, is_rely=True)
+        fqname, file, path = module.__name__, module.__file__, module.__path__
 
-        return module
+        fq = open(file)
+        mod = ast.parse(fq.read())
+        self.builder.build(mod, fqname, file, path, is_rely=True)
+        self.modules[fqname] = mod
+
+        fq.close()
+        return mod
 
 
 if __name__ == '__main__':
@@ -296,7 +302,7 @@ if __name__ == '__main__':
         '../entities/common',
     ]
     finder = ModuleLoader()
-    finder.setPath(path)
+    finder.setupPath(path)
 
     root = finder.reloadRoot('../entities/client/avtmembers/impPokemon.py')
     m = finder.load('pokemon', fromlist='pconst')

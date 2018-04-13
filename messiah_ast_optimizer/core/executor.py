@@ -1,12 +1,15 @@
 # -*- coding:utf-8 -*-
 
+import os
 import sys
 import argparse
+import logging
 import importlib
 
 
 class OptimizeExecutor(object):
-	CmdSetting = {
+	LOG_LEVEL = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+	COMMAND_SETTING = {
 		'loglevel': 'LOG_LEVEL',
 	}
 
@@ -14,24 +17,29 @@ class OptimizeExecutor(object):
 		self.optimizer = optimizer
 
 	def execute(self):
-		path, settings, cmd_settings = self.loadCommandConfig()
-		optimizer = self.optimizer(path, settings, cmd_settings)
+		root, path, settings, cmd_settings = self.loadCommandConfig()
+		optimizer = self.optimizer(root, path, settings, cmd_settings)
 		optimizer.optimize()
 
 	def loadCommandConfig(self):
 		parser = argparse.ArgumentParser()
-		parser.add_argument('path', help='file or dir to optimize')
+		parser.add_argument('root', help='the root dir of optimize project')
+		parser.add_argument('--path', help='file or dir to optimize relative to root')
 		parser.add_argument('--settings', default='setting', help='setting files')
-		parser.add_argument('--loglevel')
+		parser.add_argument('--loglevel', type=str, choices=self.LOG_LEVEL, help='log level')
 		args = parser.parse_args()
 
-		path = args.path
+		root = args.root
+		path = os.path.join(root, args.path) if args.path else root
 		setting = importlib.import_module(args.settings)
 		cmd_settings = {}
 
-		for name in self.CmdSetting:
+		if args.loglevel:
+			args.loglevel = getattr(logging, args.loglevel)
+
+		for name in self.COMMAND_SETTING:
 			val = getattr(args, name)
 			if val is not None:
-				cmd_settings[self.CmdSetting[name]] = val
+				cmd_settings[self.COMMAND_SETTING[name]] = val
 
-		return path, setting, cmd_settings
+		return root, path, setting, cmd_settings

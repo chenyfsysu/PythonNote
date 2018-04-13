@@ -64,6 +64,7 @@ class HostVisitor(object):
 	def __init__(self, rootpath, optimizer):
 		super(HostVisitor, self).__init__()
 		self.rootpath = rootpath
+		self.optimizer = optimizer
 		self.logger = optimizer.getLogger(self.__class__.__name__)
 
 		self.previsitors = defaultdict(list)

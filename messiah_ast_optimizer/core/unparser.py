@@ -13,9 +13,10 @@ class MessiahUnparser(Unparser):
 
 	def write(self, text):
 		text == '\n' and self.writeComment()
-		Unparser.write(self, text)
+		# self.f.write(text.decode('string_escape'))
+		self.f.write(text)
 
-	def fill(self, text = ""):
+	def fill(self, text=""):
 		"Indent a piece of text, according to the current indentation level"
 		self.writeComment()
 		self.f.write("\n"+"    "*self._indent + text)
@@ -44,7 +45,7 @@ class MessiahUnparser(Unparser):
 		self._comment = []
 
 
-def unparse(tree):
-    v = cStringIO()
-    MessiahUnparser(tree, file=v)
-    return v.getvalue()
+def unparse(tree, file=None):
+	if not file:
+		file = cStringIO()
+	MessiahUnparser(tree, file=file)

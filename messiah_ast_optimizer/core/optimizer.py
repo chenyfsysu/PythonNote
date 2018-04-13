@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+import utils
 import scandir
 import unparser
 
@@ -29,10 +30,11 @@ def OptimizeStep(*stepcls):
 
 
 class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
-	def __init__(self, path, setting, cmd_settings):
-		ConfigHandlerMixin.__init__(self, setting, cmd_settings)
+	def __init__(self, root, path, setting, cmd_settings):
+		ConfigHandlerMixin.__init__(self, root, setting, cmd_settings)
 		LogHandlerMixin.__init__(self)
 
+		self.root = root
 		self.path = path
 		self.logger = self.getLogger('MessiahOptimizer')
 		self.ignore_dirs = [os.path.normpath(d) for d in self.config.IGNORE_DIRS]
@@ -73,16 +75,16 @@ class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
 
 		if os.path.isfile(self.path):
 			head, tail = os.path.split(self.path)
-			self.filter_files[self.path] = tail
+			self.filter_files[os.path.normpath(self.path)] = tail
 			self.path = head
 			return
 
 		for root, dirs, files in scandir.walk(self.path, topdown=True):
-			dirs[:] = [d for d in dirs if os.path.normpath(os.path.join(root, d)) not in self.ignore_dirs]
+			dirs[:] = [d for d in dirs if utils.format_path(root, d) not in self.ignore_dirs]
 
 			for file in files:
 				if file.endswith('.py'):
-					fullpath = os.path.join(root, file)
+					fullpath = utils.format_path(root, file)
 					relpath = os.path.relpath(fullpath, self.path)
 					self.filter_files[fullpath] = relpath
 
@@ -104,8 +106,9 @@ class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
 		self.transform_walker.notifyEnter()
 		for fullpath, relpath in self.filter_files.iteritems():
 			node = self.transform_walker.walk(fullpath, relpath)
-			fullpath = os.path.join('dump', relpath)
-			self.unparse(fullpath, node)
+			# fullpath = os.path.join('dump', relpath)
+			if self.transform_walker.context.dirty:
+				self.rewrite(fullpath, node)
 
 		self.transform_walker.notifyExit()
 
@@ -115,6 +118,9 @@ class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
 	def loadData(self, visitor, default=None):
 		return self.optimize_data.get(visitor.__name__, default)
 
-	def unparse(self, path, tree):
-		src = '\n'.join(['# -*- coding:utf-8 -*-', unparser.unparse(tree)])
-		open(path, 'w').write(src)
+	def rewrite(self, path, tree):
+		self.logger.debug('%s is dirty, file will be rewrite', path)
+		file = open(path, 'w')
+		file.write('# -*- coding:utf-8 -*-\n')
+		unparser.unparse(tree, file)
+		file.close()

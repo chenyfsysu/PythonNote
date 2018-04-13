@@ -19,4 +19,3 @@ class Optimizer(MessiahOptimizer):
 if __name__ == '__main__':
 	executor = OptimizeExecutor(Optimizer)
 	executor.execute()
-

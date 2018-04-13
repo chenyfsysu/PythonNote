@@ -160,8 +160,8 @@ class BuilderScope(object):
 
 
 class IContext(object):
-	def __init__(self, rootpath, relpath):
-		self.__rootpath__ = rootpath
+	def __init__(self, fullpath, relpath):
+		self.__fullpath__ = fullpath
 		self.__relpath__ = relpath
 
 
@@ -178,6 +178,7 @@ class AstContext(IContext):
 		self.__name__ = name
 
 		self.scopes = []
+		self.dirty = False
 
 	def load(self, name, lazy=False):
 		return None
@@ -185,3 +186,6 @@ class AstContext(IContext):
 	@property
 	def scope(self):
 		return self.scopes[-1]
+
+	def markDirty(self, dirty):
+		self.dirty = dirty

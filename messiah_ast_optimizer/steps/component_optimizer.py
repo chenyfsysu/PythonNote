@@ -414,6 +414,8 @@ class ComponentTransformer(MessiahStepTransformer):
 				continue
 
 			if not isinstance(body, (ast.Import, ast.ImportFrom, ast.Assign, ast.FunctionDef, ast.ClassDef)):
+				self.global_merger.merged_files[module.__file__] = True #TODO
+				return False
 				raise RuntimeError('Invalid Stmt defined in Component of %s, type: %s' % (module.__file__, body.__class__.__name__))
 
 			if isinstance(body, ast.ClassDef) and body.name.endswith('Member'):
@@ -448,6 +450,7 @@ class ComponentTransformer(MessiahStepTransformer):
 					continue
 
 				if not isinstance(body, (ast.Expr, ast.Assign, ast.FunctionDef, ast.ClassDef)):
+					return False #TODO
 					raise RuntimeError('Invalid Stmt defined in Component of %s, src: \n%s' % (module.__file__, unparse_src(body)))
 
 				if not self.comp_merger.check(body):

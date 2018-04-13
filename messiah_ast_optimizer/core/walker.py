@@ -125,7 +125,7 @@ class TokenizeWalker(HostVisitor):
 		self.context = None
 
 	def walk(self, fullpath, relpath):
-		self.logger.info('processing: %s', relpath)
+		self.logger.debug('processing: %s', relpath)
 		self.notifyVisitFile(fullpath, relpath)
 
 		self.context = TokenizeContext(fullpath, relpath)
@@ -150,10 +150,11 @@ class VisitWalker(AstHostVisitor, AstConstantMixin, AstScopeMixin):
 		self.register(self)
 
 	def walk(self, fullpath, relpath):
+		self.logger.debug('processing: %s', relpath)
 		self.notifyVisitFile(fullpath, relpath)
-		self.context = AstContext(self.rootpath, relpath, '__main__')
+		self.context = AstContext(fullpath, relpath, '__main__')
 
-		ModuleLoader().setPath(['Python', 'Python/entities/client', 'Python/entities/common', 'Python/engine'])
+		ModuleLoader().setupPath(self.optimizer.getSysPath(fullpath))
 		tree = ModuleLoader().reloadRoot(fullpath)
 		tree = self._walk(tree)
 
