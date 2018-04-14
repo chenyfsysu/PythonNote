@@ -176,10 +176,6 @@ def set_comment(node, comment):
 	node.__comment__ = comment
 
 
-def set_dependency(node, filename, dependency):
-	pass
-
-
 def topo_sort(verts, edges, relies=None):
 	"""
 	edges: 依赖了哪些文件
@@ -190,18 +186,15 @@ def topo_sort(verts, edges, relies=None):
 		for v, rvs in edges.iteritems():
 			for rv in rvs:
 				relies[rv].append(v)
-	
 
-	q = [v for v in verts if v not in relies]
-	print q
-
+	q = [v for v in verts if not edges.get(v, None)]
 	sorted_lst = []
 	while q:
 		v = q.pop()
 
-		for rv in edges.get(v, []):
-			relies[rv].remove(v)
-			if not relies[rv]:
+		for rv in relies.get(v, []):
+			edges[rv].remove(v)
+			if not edges[rv]:
 				q.insert(0, rv)
 
 		sorted_lst.append(v)

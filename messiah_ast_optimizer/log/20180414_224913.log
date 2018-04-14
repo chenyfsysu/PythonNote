@@ -1,0 +1,21 @@
+2018-04-14 22:49:13,673 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-04-14 22:49:13,674 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:49:13,674 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:49:13,674 - TokenizeWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:49:13,676 - TokenizeWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:49:13,677 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:49:13,681 - VisitWalker - DEBUG - processing: common\const.py
+2018-04-14 22:49:13,684 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:49:13,684 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:49:13,686 - VisitWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:49:13,687 - VisitWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:49:13,687 - VisitWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:49:13,704 - TransformWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:49:13,710 - ComponentTransformer - DEBUG - Start merge class Avatar
+2018-04-14 22:49:13,711 - ComponentTransformer - WARNING - Merge was skip because inherit AvatarRoleComponent in Python\entities\client\Avatar.py
+2018-04-14 22:49:13,713 - MessiahOptimizer - DEBUG - Python\entities\client\Avatar.py is dirty, file will be rewrite
+2018-04-14 22:49:13,720 - TransformWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:49:13,720 - TransformWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:49:13,721 - TransformWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:49:13,723 - TransformWalker - DEBUG - processing: common\const.py
+2018-04-14 22:49:13,723 - TransformWalker - DEBUG - processing: client\avtmembers\impPokemon.py

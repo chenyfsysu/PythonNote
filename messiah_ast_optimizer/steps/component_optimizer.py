@@ -37,13 +37,40 @@ class ComponentVisitor(MessiahStepVisitor):
 			pass
 		return node
 
-	def visit_Name(self, node, context):
-		pass
-		# if isinstance(node.ctx, ast.Load):
-		# 	print node.load()
+	def visit_ClassDef(self, node, context):
+		for deco in node.decorator_list:
+			if isinstance(deco, ast.Call) and deco.func.id == 'Components':
+				return self.handleComponentDependency(context.__fullpath__, node, deco)
 
-	def visit_Call(self, node, context):
-		pass
+	def handleComponentDependency(self, path, node, deco):
+		locals = dict(node.parent.nScope().scope.locals)
+		globals = dict(node.nModule().scope.locals)
+		frame = PyFrame(locals, globals)
+
+		files = self.getComponentDependency(node.name, deco, frame)
+		files and self.optimizer.addFileDependencies(path, files)
+
+	def getComponentDependency(self, name, node, frame):
+		host_module = node.nModule()
+
+		files = []
+		try:
+			posargs, keyargs = node._evalArgs(frame)
+			membername = keyargs.get("postfix", "%sMember") % name
+
+			for args in posargs:
+				if isinstance(args, ast.Module):
+					files.append(args.__file__)
+				elif isinstance(args, ast.ClassDef):
+					module = args.nModule()
+					module is not host_module and files.append(module.__file__)
+				else:
+					raise RuntimeError('Merge Component with unknown type')
+		except MEvalException:
+			self.logger.debug('Merge is skip because of get component Error')
+			files = []
+
+		return files
 
 
 class EntryMerger(object):

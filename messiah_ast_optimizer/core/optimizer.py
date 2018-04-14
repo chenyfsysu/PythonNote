@@ -5,6 +5,7 @@ import utils
 import scandir
 import unparser
 
+from collections import defaultdict
 from walker import TokenizeWalker, VisitWalker, TransformWalker
 from mixins import ConfigHandlerMixin, LogHandlerMixin
 
@@ -36,11 +37,13 @@ class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
 
 		self.root = root
 		self.path = path
+		self.file = None
 		self.logger = self.getLogger('MessiahOptimizer')
+
 		self.ignore_dirs = [os.path.normpath(d) for d in self.config.IGNORE_DIRS]
 		self.ignore_files = [os.path.normpath(f) for f in self.config.IGNORE_FILES]
-		self.file = None
 		self.filter_files = {}
+		self.file_dependencies = defaultdict(list)
 
 		self.tokenize_walker = TokenizeWalker(path, self)
 		self.visit_walker = VisitWalker(path, self)
@@ -104,13 +107,23 @@ class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
 
 	def processTransform(self):
 		self.transform_walker.notifyEnter()
-		for fullpath, relpath in self.filter_files.iteritems():
+
+		files = utils.topo_sort(self.filter_files.keys(), self.file_dependencies)
+		for fullpath in files:
+			relpath = self.filter_files[fullpath]
 			node = self.transform_walker.walk(fullpath, relpath)
 			# fullpath = os.path.join('dump', relpath)
 			if self.transform_walker.context.dirty:
 				self.rewrite(fullpath, node)
 
 		self.transform_walker.notifyExit()
+
+	def addFileDependencies(self, src, files):
+		for dst in files:
+			if src in self.file_dependencies[dst]:
+				raise RuntimeError('recursive dependency exsits between %s and %s' % (src, dst))
+
+			self.file_dependencies[src].append(dst)
 
 	def storeData(self, visitor, data):
 		self.optimize_data[visitor.__name__] = data

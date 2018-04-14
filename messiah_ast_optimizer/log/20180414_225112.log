@@ -1,0 +1,20 @@
+2018-04-14 22:51:12,108 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-04-14 22:51:12,109 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:51:12,109 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:51:12,109 - TokenizeWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:51:12,111 - TokenizeWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:51:12,111 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:51:12,112 - VisitWalker - DEBUG - processing: common\const.py
+2018-04-14 22:51:12,114 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:51:12,115 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:51:12,115 - VisitWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:51:12,117 - VisitWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:51:12,118 - VisitWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:51:12,128 - TransformWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:51:12,132 - ComponentTransformer - DEBUG - Start merge class Avatar
+2018-04-14 22:51:12,132 - ComponentTransformer - WARNING - Merge was skip because inherit AvatarRoleComponent in Python\entities\client\Avatar.py
+2018-04-14 22:51:12,134 - TransformWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:51:12,134 - TransformWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:51:12,137 - TransformWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:51:12,137 - TransformWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:51:12,138 - TransformWalker - DEBUG - processing: common\const.py

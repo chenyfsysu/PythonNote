@@ -1,0 +1,12 @@
+2018-04-14 22:43:11,223 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-04-14 22:43:11,224 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:43:11,226 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:43:11,226 - TokenizeWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:43:11,226 - TokenizeWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:43:11,226 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-04-14 22:43:11,229 - VisitWalker - DEBUG - processing: common\const.py
+2018-04-14 22:43:11,230 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-14 22:43:11,230 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-14 22:43:11,232 - VisitWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-14 22:43:11,233 - VisitWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-14 22:43:11,234 - VisitWalker - DEBUG - processing: client\Avatar.py
