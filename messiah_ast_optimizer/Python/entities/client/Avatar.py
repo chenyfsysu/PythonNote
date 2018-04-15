@@ -1,34 +1,8 @@
 # -*- coding:utf-8 -*-
 
 import const
-import avtmembers
-
-class iCombatUnit(object, ):
-
-    def useSkill(self):
-        print 'iCombatUnit'
-
-    def doAttack(self):
-        print 'iCombatUnit'
-
-class cCombatUnit(iCombatUnit, ):
-    USE = 'cCombatUnit'
-
-    def useSkill(self):
-        print 'cCombatUnit'
-
-class AvatarRoleComponent(cCombatUnit, ):
-
-    def checkBloodbarVisible(self):
-        if self.isInCJBattle():
-            return True
-        return False
-
-    def checkTopNameVisible(self):
-        return cRole.checkTopNameVisible.im_func(self)
-
-    def checkSFXVisible(self):
-        return True
+import const
+import avatarmembers
 
 class AvatarModelComponent(object, ):
 
@@ -41,20 +15,17 @@ class AvatarModelComponent(object, ):
         return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
 @with_tag('IsAvatar')
-@Components(AvatarModelComponent, AvatarRoleComponent, avtmembers.importall())
 class Avatar(ClientAreaEntity, ):
     Property('school')
     USE = 'cCombatUnit'
 
-
     def checkSFXVisible(self):
         return True
-
-    def getCombatPokemon(self):
-        return EntityManager.getentity(self.combatPokemonId)
-
-    def useSkill(self):
-        print 'cCombatUnit'
+    Property('ai')
+    CombatType = const.COMBATUNIT_TYPE_AVT
+    func = 1
+    Property('combatPokemonId', '')
+    Property('shadowPokemonId', '')
 
     def getModelScale(self):
         if self.monster_shapeshift:
@@ -64,25 +35,22 @@ class Avatar(ClientAreaEntity, ):
             return self.buffs.ModelShapeShiftScale()
         return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
+    def updateAllVisible(self):
+        ModelSeqLoader().RefreshDismiss()
+
     def doAttack(self):
-        print 'iCombatUnit'
+        print 'impCombat AvatarMember'
 
-    def onClick(self):
-        p = GlobalData.p
-        if p.isInSurvivalBattle():
-            return
-        if (self.id != p.id):
-            if (not p.canLockTarget(self)):
-                p.popNotificationMsg(const.SKILL_ID)
-            else:
-                p.lockTarget(self)
-            if (TasteQuery.tasteInActDuration and self.buffs.tasteCarrierNo()):
-                HomePartnerDialogue().show(self.id, 5)
+    def getCombatPokemon(self):
+        return EntityManager.getentity(self.combatPokemonId)
 
-    def checkBloodbarVisible(self):
-        if self.isInCJBattle():
-            return True
-        return False
+class PlayerAvatar(Avatar, ):
+    pass
+    Property('ai')
+    CombatType = const.COMBATUNIT_TYPE_AVT
 
-    def checkTopNameVisible(self):
-        return cRole.checkTopNameVisible.im_func(self)
+    def updateAllVisible(self):
+        ModelSeqLoader().RefreshDismiss()
+
+    def doAttack(self):
+        print 'impCombat PlayerAvatarMember'

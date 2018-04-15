@@ -1,0 +1,42 @@
+2018-04-15 17:46:13,765 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-04-15 17:46:13,766 - TokenizeWalker - DEBUG - processing: client\combatpokemonmembers\__init__.py
+2018-04-15 17:46:13,766 - TokenizeWalker - DEBUG - processing: client\Model.py
+2018-04-15 17:46:13,767 - TokenizeWalker - DEBUG - processing: client\CueCallback.py
+2018-04-15 17:46:13,769 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-15 17:46:13,769 - TokenizeWalker - DEBUG - processing: client\combatpokemonmembers\impDoubleRide.py
+2018-04-15 17:46:13,769 - TokenizeWalker - DEBUG - processing: client\avatarmembers\__init__.py
+2018-04-15 17:46:13,770 - TokenizeWalker - DEBUG - processing: client\CombatPokemon.py
+2018-04-15 17:46:13,772 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-15 17:46:13,772 - TokenizeWalker - DEBUG - processing: client\avatarmembers\impCombat.py
+2018-04-15 17:46:13,773 - TokenizeWalker - DEBUG - processing: client\avatarmembers\impPokemon.py
+2018-04-15 17:46:13,773 - TokenizeWalker - DEBUG - processing: client\avatarmembers\impDoubleRide.py
+2018-04-15 17:46:13,773 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-04-15 17:46:13,775 - VisitWalker - DEBUG - processing: common\const.py
+2018-04-15 17:46:13,776 - VisitWalker - DEBUG - processing: client\combatpokemonmembers\__init__.py
+2018-04-15 17:46:13,776 - VisitWalker - DEBUG - processing: client\Model.py
+2018-04-15 17:46:13,779 - VisitWalker - DEBUG - processing: client\CueCallback.py
+2018-04-15 17:46:13,782 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-15 17:46:13,783 - VisitWalker - DEBUG - processing: client\combatpokemonmembers\impDoubleRide.py
+2018-04-15 17:46:13,786 - VisitWalker - DEBUG - processing: client\avatarmembers\__init__.py
+2018-04-15 17:46:13,788 - VisitWalker - DEBUG - processing: client\CombatPokemon.py
+2018-04-15 17:46:13,790 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-15 17:46:13,792 - VisitWalker - DEBUG - processing: client\avatarmembers\impCombat.py
+2018-04-15 17:46:13,795 - VisitWalker - DEBUG - processing: client\avatarmembers\impPokemon.py
+2018-04-15 17:46:13,796 - VisitWalker - DEBUG - processing: client\avatarmembers\impDoubleRide.py
+2018-04-15 17:46:13,799 - VisitWalker - DEBUG - processing: client\Avatar.py
+2018-04-15 17:46:13,802 - TransformWalker - DEBUG - processing: client\Avatar.py
+2018-04-15 17:46:13,808 - TransformWalker - DEBUG - processing: client\avatarmembers\impDoubleRide.py
+2018-04-15 17:46:13,809 - TransformWalker - DEBUG - processing: client\avatarmembers\impPokemon.py
+2018-04-15 17:46:13,812 - TransformWalker - DEBUG - processing: client\avatarmembers\impCombat.py
+2018-04-15 17:46:13,815 - TransformWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-15 17:46:13,816 - TransformWalker - DEBUG - processing: client\CombatPokemon.py
+2018-04-15 17:46:13,819 - TransformWalker - DEBUG - processing: client\avatarmembers\__init__.py
+2018-04-15 17:46:13,819 - TransformWalker - DEBUG - processing: client\combatpokemonmembers\impDoubleRide.py
+2018-04-15 17:46:13,822 - TransformWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-15 17:46:13,823 - TransformWalker - DEBUG - processing: client\CueCallback.py
+2018-04-15 17:46:13,826 - TransformWalker - DEBUG - processing: client\combatpokemonmembers\__init__.py
+2018-04-15 17:46:13,828 - TransformWalker - DEBUG - processing: common\const.py
+2018-04-15 17:46:13,829 - TransformWalker - DEBUG - processing: client\Model.py
+2018-04-15 17:46:13,831 - ComponentTransformer - DEBUG - Start merge class DummyEffect
+2018-04-15 17:46:13,834 - ComponentTransformer - DEBUG - Start merge class SimpleModel
+2018-04-15 17:46:13,834 - MessiahOptimizer - DEBUG - dump\client\Model.py is dirty, file will be rewrite

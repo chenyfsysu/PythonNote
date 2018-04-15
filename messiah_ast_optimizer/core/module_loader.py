@@ -225,7 +225,7 @@ class ModuleLoader(Singleton):
         if fqname in self.modules:
             m = self.modules[fqname]
             if not lazy and m.__incomplete__:
-                self.completeModule(m)
+                m = self.completeModule(m)
             return m
 
         if parent and parent.__path__ is None:

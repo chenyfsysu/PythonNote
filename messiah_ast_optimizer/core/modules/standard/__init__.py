@@ -6,7 +6,9 @@ import _collections
 import _copy
 import _functools
 import _hashlib
+import _inspect
 import _json
+import _numbers
 import _os
 import _random
 import _re
@@ -24,7 +26,9 @@ def setup(loader):
 	_copy.setup(loader)
 	_functools.setup(loader)
 	_hashlib.setup(loader)
+	_inspect.setup(loader)
 	_json.setup(loader)
+	_numbers.setup(loader)
 	_os.setup(loader)
 	_random.setup(loader)
 	_re.setup(loader)

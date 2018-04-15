@@ -301,7 +301,7 @@ class ComponentEntryMerger(EntryMerger):
 
 			for name in names :
 				if name in self.stmt_names:
-					self.markDuplicate(name, comp_name, node.nModule().__file__, self.getEntryModule(node.name))
+					self.markDuplicate(name, comp_name, node.nModule().__file__, self.getEntryModule(name))
 					return False
 
 		return True
@@ -320,8 +320,12 @@ class ComponentEntryMerger(EntryMerger):
 			self.components_func[key].append(name)
 			node.name = name
 
-		self.entries['FunctionDef'].append(node)
-		self.func_names[node.name] = ('FunctionDef', node.nModule().__file__)
+		if False and node.name in self.func_names:
+			_, _, index = self.func_names[node.name]
+			self.entries['FunctionDef'][index] = node
+		else:
+			self.func_names[node.name] = ('FunctionDef', node.nModule().__file__, len(self.func_names))
+			self.entries['FunctionDef'].append(node)
 
 	def merge_Expr(self, node):
 		self.entries['Stmt'].append(node)
@@ -353,9 +357,6 @@ class ComponentTransformer(MessiahStepTransformer):
 		self.comp_merger = None
 
 	def visit_ClassDef(self, node, context):
-		if node.name == 'PlayerAvatar':
-			return node
-
 		for deco in node.decorator_list:
 			if isinstance(deco, ast.Call) and deco.func.id == 'Components':
 				self.logger.debug('Start merge class %s', node.name)
@@ -364,10 +365,9 @@ class ComponentTransformer(MessiahStepTransformer):
 				if not self.global_merger:
 					self.global_merger = GlobalEntryMerger(self.logger)
 
+				context.markDirty(True)
 				return self.mergeComponents(node, deco)
 
-		# print 'MRO of %s: %s' % (node.name, [n.name for n in node.nMro()])
-		# print 'FullBases of %s: %s' % (node.name, [n.name for n in node.nFullBases()])
 		return node
 
 	def mergeComponents(self, node, deco):
@@ -441,7 +441,7 @@ class ComponentTransformer(MessiahStepTransformer):
 				continue
 
 			if not isinstance(body, (ast.Import, ast.ImportFrom, ast.Assign, ast.FunctionDef, ast.ClassDef)):
-				self.global_merger.merged_files[module.__file__] = True #TODO
+				self.global_merger.merged_files[module.__file__] = False #TODO
 				return False
 				raise RuntimeError('Invalid Stmt defined in Component of %s, type: %s' % (module.__file__, body.__class__.__name__))
 
@@ -449,7 +449,7 @@ class ComponentTransformer(MessiahStepTransformer):
 				continue
 
 			if not self.global_merger.check(body):
-				self.global_merger.merged_files[module.__file__] = True
+				self.global_merger.merged_files[module.__file__] = False
 				return False
 
 		for body in module.body:
@@ -515,9 +515,11 @@ class ComponentTransformer(MessiahStepTransformer):
 		self.comp_merger = None
 
 	def canMerge(self, mro):
+		# """
 		if len(mro) > 1:
 			self.logger.warning('Merge was skip because inherit %s in %s', mro[0].name, mro[0].nModule().__file__)
 			return False
+		# """
 
 		for cls in mro:
 			if not cls or cls.decorator_list:

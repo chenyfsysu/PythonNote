@@ -1,3 +1,14 @@
+CODE = """
+class A(object):
+	@property
+	def func(self):
+		pass
+
+	@property.setter
+	def func(self):
+		pass
+
+"""
+
 import ast
-import astunparse
-print astunparse.dump(ast.parse('def func(self, dt): self.call(name)').body[0])
+print ast.parse(CODE).body[0].body[1].decorator_list[0].value
