@@ -73,62 +73,102 @@ class ComponentVisitor(MessiahStepVisitor):
 		return files
 
 
-class EntryMerger(object):
-
-	def __init__(self, logger):
-		self.logger = logger
-		self.entries = defaultdict(list)
-
-	def dump(self):
-		raise NotImplementedError
-
-	def check(self, node):
-		checker = getattr(self, 'check_%s' % node.__class__.__name__)
-		return checker(node)
-
-	def merge(self, node):
-		merger = getattr(self, 'merge_%s' % node.__class__.__name__)
-		return merger(node)
+class Entry(object):
+	def __init__(self, node, type, module_path):
+		self.type = type
+		self.module_path = module_path
+		self.node = node
 
 
-class GlobalEntryMerger(EntryMerger):
+class ImportEntry(Entry):
+	def __init__(self, node, type, module_path, fullname):
+		super(ImportEntry, self).__init__(node, type, module_path)
+		self.fullname = fullname
 
-	def __init__(self, logger):
-		super(GlobalEntryMerger, self).__init__(logger)
-		self.names = {}
-		self.merged_files = {}
 
-	def dump(self):
-		getter = operator.itemgetter('Import', 'ImportFrom', 'Stmt')
-		return [body for c in getter(self.entries) for body in c]
+class ImportFromEntry(Entry):
+	def __init__(self, node, type, module_path, fromlist):
+		super(ImportFromEntry, self).__init__(node, type, module_path)
+		self.fromlist = fromlist
 
-	def sameModule(self, src, dst):
-		return src.findModule() is dst.findModule()
 
-	def check_Import(self, node):
-		accept = True
-		for alias in node.names:
-			name = alias.inferName()
+class ComponentAnalyser(object):
+	"""
+	Component的Mro的内容分割输出，不能合并的Component也要继续分析，因为可能有其他模块依赖该模块内容
+	"""
+	def __init__(self, comp_postfix='Member'):
+		self.comp_postfix = comp_postfix
+		self.dirty = False
 
-			if name not in self.names:
+		self.processed_files = set()
+		self.globals_entries = OrderedDict()
+		self.globals_redirects = set()
+
+		self.classes_meths = OrderedDict()
+		self.classes_stmts = []
+		self.classes_stmts_names = {}
+		self.reserved_funcs = {}
+		self.reserved_args_tmpl = {}
+
+	def analyze(self, node, host_module, ignore_globals=False):
+		mro = node.nMro()
+
+		for cls in reversed(mro):
+			module = cls.nModule()
+			self.processed_files.add(module.__file__)
+
+			if not ignore_globals and not self.dirty:
+				module is not host_module and self.mergeGlobals(module)
+
+			self.mergeClasses(cls)
+			self.globals_redirects.add(cls.name)
+
+	def mergeGlobals(self, module):
+		for body in module.body:
+			if self.dirty:
+				return
+
+			if isinstance(body, ast.ClassDef) and body.name.endswith(self.comp_postfix):
 				continue
 
-			desc = self.names[name]
-			if desc[0] != 'Import':
-				accept = False
+			if isinstance(body, ast.Expr) and isinstance(body.value, ast.Str):
+				continue
+
+			if isinstance(body, (ast.Import, ast.ImportFrom, ast.Assign, ast.FunctionDef, ast.ClassDef)):
+				merger = getattr(self, 'mergeGlobals_%s' % body.__class__.__name__)
+				accept = merger(body)
+				self.dirty = not accept
+
+	def mergeGlobals_Import(self, node):
+		path = node.nModule().__file__
+
+		for alias in node.names:
+			module = node.findModule(alias.name)
+			if alias.name != module.__name__:
+				alias.name = module.__name__
+
+			name = alias.inferName()
+			if name not in self.globals_entries:
+				self.globals_entries[name] = ImportEntry(node, 'Import', path, alias.name)
+
 			else:
-				type, fullname, index, _ = self.names[name]
-				cur = self.entries[type][index]
-				accept = cur.findModule(fullname) is node.findModule(alias.name)
+				entry = self.globals_entries[name]
+				if not isinstance(entry, ImportEntry):
+					self.markGlobalsDuplicate(name, path, entry.path)
+					return False
 
-			if not accept:
-				self.markDuplicate(name, node.nModule().__file__, desc[-1])
-				break
+				if not entry.node.findModule(entry.fullname) is node.findModule(alias.name):
+					self.markGlobalsDuplicate(name, path, entry.path)
+					return False
 
-		return accept
+		return True
 
-	def check_ImportFrom(self, node):
-		accept = True
+	def mergeGlobals_ImportFrom(self, node):
+		path = node.nModule().__file__
+		module = node.findModule()
+		if module.__name__ != node.module:
+			node.module = module.__name__
+
 		for alias in node.names:
 			name = alias.inferName()
 
@@ -137,23 +177,22 @@ class GlobalEntryMerger(EntryMerger):
 				return False
 
 			if name not in self.names:
-				continue
-
-			desc = self.names[name]
-			if desc[0] != 'ImportFrom':
-				accept = False
+				self.globals_entries[name] = ImportFrom(node, 'ImportFrom', path, alias.name)
 			else:
-				type, fromlist, index, _ = self.names[name]
-				cur = self.entries[type][index]
-				accept = fromlist == alias.name and cur.findModule() is node.findModule()
+				entry = self.globals_entries[name]
+				if not isinstance(entry, ImportFromEntry):
+					self.markGlobalsDuplicate(name, path, entry.path)
+					return False
 
-			if not accept:
-				self.markDuplicate(name, node.nModule().__file__, desc[-1])
-				break
+				if entry.node.findModule() is not module:
+					return False
 
-		return accept
+		self.globals_entries['ImportFrom'].append(node)
+		return True
 
-	def check_Assign(self, node):
+	def mergeGlobals_Assign(self, node):
+		path = node.nModule().__file__
+
 		for target in node.targets:
 			names = get_names(target)
 
@@ -162,189 +201,109 @@ class GlobalEntryMerger(EntryMerger):
 				return False
 
 			for name in names :
-				if name in self.names:
-					self.markDuplicate(name, node.nModule().__file__, self.names[name][-1])
+				if name in self.globals_entries:
+					self.markGlobalsDuplicate(name, path, self.globals_entries[name].path)
 					return False
+
+				self.globals_entries[name] = Entry(node, 'Stmt', path)
 
 		return True
 
-	def check_FunctionDef(self, node):
-		return self._checkFunctionOrClass(node)
+	def mergeGlobals_FunctionDef(self, node):
+		return self._mergeGlobals_FunctionOrClass(node)
 
-	def check_ClassDef(self, node):
-		return self._checkFunctionOrClass(node)
+	def mergeGlobals_ClassDef(self, node):
+		return self._mergeGlobals_FunctionOrClass(node)
 
-	def _checkFunctionOrClass(self, node):
-		accept = node.name not in self.names
+	def _mergeGlobals_FunctionOrClass(self, node):
+		path = node.nModule().__file__
+		accept = node.name not in self.globals_entries
 		if not accept:
 			name = node.name
-			self.markDuplicate(name, node.nModule().__file__, self.names[name][-1])
+			self.markGlobalsDuplicate(name, path, self.globals_entries[name].path)
+		else:
+			self.globals_entries[node.name] = Entry(node, 'Stmt', path)
 
 		return accept
 
-	def merge_Import(self, node):
-		self._mergeImport(node)
-		for alias in node.names:
-			module = node.findModule(alias.name)
-			if alias.name != module.__name__:
-				alias.name = module.__name__
+	def mergeClasses(self, cls):
+		if not self.canMergeClass(cls):
+			self.dirty = True
+			return
 
-	def merge_ImportFrom(self, node):
-		self._mergeImport(node)
-		
-		module = node.findModule()
-		if module.__name__ != node.module:
-			node.module = module.__name__
-
-	def _mergeImport(self, node):
-		"""有些相对Import"""
-		remove = True
-		type = node.__class__.__name__
-		path = node.nModule().__file__
-		for alias in node.names:
-			name = alias.inferName()
-			if name in self.names:
+		for body in cls.body:
+			if isinstance(body, ast.Pass):
 				continue
 
-			remove = False
-			self.names[name] = (type, alias.name, len(self.entries[type]), path)
+			if isinstance(ast.Assign, ast.FunctionDef, ast.ClassDef):
+				merger = getattr(self, 'mergeClasses_%s' % body.__class__.__name__)
+				accept = merger(body)
+				self.dirty = not accept
 
-		if not remove:
-			self.entries[type].append(node)
-
-	def merge_Assign(self, node):
-		self.entries['Stmt'].append(node)
-		path = node.nModule().__file__
-
-		for target in node.targets:
-			names = get_names(target)
-			for name in names:
-				self.names[name] = ('Stmt', path)
-
-	def merge_FunctionDef(self, node):
-		self.entries['Stmt'].append(node)
-		self.names[node.name] = ('Stmt', node.nModule().__file__)
-
-	def merge_ClassDef(self, node):
-		self.entries['Stmt'].append(node)
-		self.names[node.name] = ('Stmt', node.nModule().__file__)
-
-	def markDuplicate(self, name, dst, src):
-		self.logger.warning('Global definition of name %s in %s is duplicate with file in %s', name, dst, src)
-
-
-class ComponentEntryMerger(EntryMerger):
-	ComponentFuncArgs = {
-		'init': 'bdict',
-		'post': 'bdict',
-		'fini': 'bdict',
-		'tick': 'dt'
-	}
-
-	def __init__(self, logger):
-		super(ComponentEntryMerger, self).__init__(logger)
-		self.stmt_names = {}
-		self.func_names = {}
-		self.components_func = defaultdict(list)
-
-	def dump(self):
-		getter = operator.itemgetter('Stmt', 'FunctionDef')
-		bodies = [body for c in getter(self.entries) for body in c]
-		bodies.extend(self.generateComponentFunc())
-
-		return bodies
-
-	def generateComponentFunc(self):
-		funcs = []
-		for key in self.ComponentFuncArgs:
-			stmts = []			
-			containers = self.components_func[key]
-			if not containers:
-				continue
-
-			args = self.ComponentFuncArgs[key]
-			for func in containers:
-				stmts.append(self._generateFuncCall(func, args))
-
-			funcs.append(self._generateFuncDef(key, args, stmts))
-
-		return funcs
-
-	def _generateFuncCall(self, func, args):
-		func = ast.Attribute(value=ast.Name(id='self', ctx=ast.Load()), attr=func, ctx=ast.Load())
-		args = [ast.Name(id=args, ctx=ast.Load())]
-		return ast.Expr(value=ast.Call(func=func, args=args, keywords=[], starargs=None, kwargs=None))
-
-	def _generateFuncDef(self, key, args, stmts):
-		name = '_host_%s' % key
-		args = [ast.Name(id='self', ctx=ast.Param()), ast.Name(id=args, ctx=ast.Param())]
-		arguments = ast.arguments(args=args, vararg=None, kwarg=None, defaults=[])
-		return ast.FunctionDef(name=name, args=arguments, body=stmts, decorator_list=[])
-
-	def getEntryModule(self, name):
-		return self.stmt_names[name][-1]
-
-	def check_FunctionDef(self, node):
-		return True
-
-	def check_Expr(self ,node):
-		return True
-
-	def check_Assign(self, node):
+	def mergeClasses_Assign(self, node):
 		comp_name = node.parent.name
+		path = node.nModule().__file__
+
 		for target in node.targets:
 			names = get_names(target)
 
 			if not names:
-				self.logger.warning('Strange assignment is defined in %s, Component(%s)', node.nModule().__file__, comp_name)
-				return False
+				self.logger.warning('Strange assignment is defined in %s, Component(%s)', path, comp_name)
+				self.dirty = True
+				continue
 
-			for name in names :
-				if name in self.stmt_names:
-					self.markDuplicate(name, comp_name, node.nModule().__file__, self.getEntryModule(name))
-					return False
-
-		return True
-
-	def check_ClassDef(self, node):
-		accept = node.name not in self.stmt_names
-		if not accept:
-			self.markDuplicate(node.name, node.parent.name, node.nModule().__file__, self.getEntryModule(node.name))
-
-		return accept
-
-	def merge_FunctionDef(self, node):
-		if node.name.endswith('component__'):
-			name = '%s%s' % (node.name, node.nModule().__name__.replace('.', '_'))
-			key = node.name.split('_')[2]
-			self.components_func[key].append(name)
-			node.name = name
-
-		if False and node.name in self.func_names:
-			_, _, index = self.func_names[node.name]
-			self.entries['FunctionDef'][index] = node
-		else:
-			self.func_names[node.name] = ('FunctionDef', node.nModule().__file__, len(self.func_names))
-			self.entries['FunctionDef'].append(node)
-
-	def merge_Expr(self, node):
-		self.entries['Stmt'].append(node)
-
-	def merge_Assign(self, node):
-		self.entries['Stmt'].append(node)
-		path = node.nModule().__file__
-
-		for target in node.targets:
-			names = get_names(target)
 			for name in names:
-				self.stmt_names[name] = ('Stmt', path)
+				self.classes_stmts_names[name] = node
 
-	def merge_ClassDef(self, node):
-		self.entries['Stmt'].append(node)
-		self.stmt_names[node.name] = ('Stmt', node.nModule().__file__)
+	def mergeClasses_FunctionDef(self, node):
+		if node.name.endswith('component__'):
+			self.handleReservedFunc(node)
 
-	def markDuplicate(self, name, comp, dst, src):
+		module = node.nModule()
+		path = module.__file__
+
+		if node.name in self.classes_stmts_names:
+			cur_path = self.classes_stmts_names[name].path
+			raise RuntimeError('Global definition of name %s in %s is duplicate with file in %s' % (node.name, path, cur_path))
+
+		newer = node.name in self.classes_meths or self.classes_meths[node.name][-1].nModule() is module
+		if newer:
+			self.classes_meths[node.name] = [node]
+		else:
+			self.classes_meths[node.name].append(node)				
+
+	def mergeClasses_ClassDef(self, node):
+		path = node.nModule().__file__
+		self.classes_stmts_names[node.name] = Entry(node, 'ClassDef', path)
+		self.classes_stmts.append(node)
+
+	def handleReservedFunc(self, node):
+		name = '%s%s' % (node.name, node.nModule().__name__.replace('.', '_'))
+		key = node.name.split('_')[2]
+
+		if key not in self.reserved_args_tmpl:
+			self.reserved_args_tmpl[key] = node.args
+		else:
+			tmpl = self.reserved_args_tmpl[key]
+			if tmpl.argsFlag() != node.args.argsFlag():
+				self.reserved_args_tmpl[key] = ast.arguments(args=[], vararg='args', kwarg='kwargs', defaults=[])
+
+		self.reserved_funcs[key].append(name)
+		node.name = name
+
+	def canMergeClass(self, cls):
+		if cls.decorator_list:
+			return False
+
+	def markGlobalsDuplicate(self, name, dst, src):
+		self.logger.warning('Global definition of name %s in %s is duplicate with file in %s', name, dst, src)
+
+	def markClassesDuplicate(self, name, comp, dst, src):
 		self.logger.warning('Component(%s) definition of name %s in %s is duplicate with file in %s', name, comp, dst, src)
+
+
+class GlobalMerger(object):
+	pass
 
 
 class ComponentTransformer(MessiahStepTransformer):
@@ -409,22 +368,45 @@ class ComponentTransformer(MessiahStepTransformer):
 		return components
 
 	def doMergeComponents(self, host, components):
-		methods, attrs, properties = {}, [], []
 		skips, host_module = [], host.nModule()
 
+		analysers = []
 		for comp in components:
-			comp_module = comp.nModule()
+			analyser = ComponentAnalyser()
+			analyser.analyze(comp, host_module)
+			analysers.append(analyser)
 
-			if comp_module is not host_module and not self.mergeGlobalEntries(comp_module):
-				skips.append(comp)
+		for analyser in analysers:
+			if analyser.dirty:
+				skips.append(analyser)
 				continue
 
-			"""这里就算跳过了也要处理完，有些有依赖关系的Component, 如iCombatUnit中的calcRideProps是要被impRide覆盖的，因此如果impCombat不能合并，impRide也不能合并"""
-			if not self.mergeComponentEntries(comp):
-				skips.append(comp)
-				continue
+			# 1）如果Globals名字空间有冲突，不能合并
+			# 2）如果前面被调过的Component有名字覆盖关系, 不能合并
+			for skip in skips:
+				"""检查有没有名字覆盖关系，如果有，则当前也不能合并"""
+				if skip.checkDuplicate(analyser):
+					skips.append(analyser)
+
+			# 合并
+
+			# comp_module = comp.nModule()
+			# mro = comp.nMro()
+
+			# if comp_module is not host_module and not self.mergeGlobalEntries(comp_module):
+			# 	skips.append(comp)
+			# 	continue
+
+			# """这里就算跳过了也要处理完，有些有依赖关系的Component, 如iCombatUnit中的calcRideProps是要被impRide覆盖的，因此如果impCombat不能合并，impRide也不能合并"""
+			# if not self.mergeComponentEntries(comp):
+			# 	skips.append(comp)
+			# 	continue
 
 		return skips
+
+	def checkMergeEntries(self, host_module, mro):
+		for comp in components:
+			pass
 
 	def mergeGlobalEntries(self, module):
 		"""
@@ -440,29 +422,8 @@ class ComponentTransformer(MessiahStepTransformer):
 			if isinstance(body, ast.Expr) and isinstance(body.value, ast.Str):
 				continue
 
-			if not isinstance(body, (ast.Import, ast.ImportFrom, ast.Assign, ast.FunctionDef, ast.ClassDef)):
-				self.global_merger.merged_files[module.__file__] = False #TODO
-				return False
-				raise RuntimeError('Invalid Stmt defined in Component of %s, type: %s' % (module.__file__, body.__class__.__name__))
-
-			if isinstance(body, ast.ClassDef) and body.name.endswith('Member'):
-				continue
-
-			if not self.global_merger.check(body):
-				self.global_merger.merged_files[module.__file__] = False
-				return False
-
-		for body in module.body:
-			if isinstance(body, ast.Expr) and isinstance(body.value, ast.Str):
-					continue
-
-			if isinstance(body, ast.ClassDef) and body.name.endswith('Member'):
-				continue
-
-			self.global_merger.merge(body)
-
-		self.global_merger.merged_files[module.__file__] = True
-		return True
+			if isinstance(body, (ast.Import, ast.ImportFrom, ast.Assign, ast.FunctionDef, ast.ClassDef)):
+				pass
 
 	def mergeComponentEntries(self, comp):
 		module = comp.nModule()

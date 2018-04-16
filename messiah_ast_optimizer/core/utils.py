@@ -163,6 +163,7 @@ def new_importfrom(module, name, asname, level=0, parent=None):
 
 	return node
 
+
 def calc_augassign(src, op, value):
 	dst = utils.get_constant(node.value)
 	return const.UNKNOW if dst == const.UNKNOW else fold_binop(op, src, dst)

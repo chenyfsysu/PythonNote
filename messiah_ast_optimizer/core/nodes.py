@@ -127,6 +127,9 @@ class arguments(Node):
 	def needArgs(self):
 		return any((self.args, self.vararg, self.kwarg, self.defaults))
 
+	def argsFlag(self):
+		return len(self.args), self.vararg is None, self.kwarg is None
+
 
 @dynamic_extend(_ast.boolop)
 class boolop(Node):

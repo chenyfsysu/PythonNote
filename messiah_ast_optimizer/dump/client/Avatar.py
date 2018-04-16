@@ -1,9 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import const
-import avtmembers
-
-
+import avatarmembers
 
 class AvatarModelComponent(object, ):
 
@@ -16,16 +14,12 @@ class AvatarModelComponent(object, ):
         return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
 @with_tag('IsAvatar')
-@Components(AvatarModelComponent, *avtmembers.importall())
 class Avatar(ClientAreaEntity, ):
     Property('school')
     USE = 'cCombatUnit'
 
-
     def checkSFXVisible(self):
         return True
 
-
-@Components(*avtmembers.importall())
-class PlayerAvatar(Avatar):
+class PlayerAvatar(object, ):
     pass

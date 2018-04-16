@@ -13,3 +13,12 @@ eg: Component A: from Model import Model
 4）若有除Class Attr、FunctionDef、Property以外的其他AstNode， 调过合并并抛建议修改信息
 5）如果Component存在Meta，装饰器等，调过合并， 抛提示信息
 6）Component里面定义的内容，除了函数外不允许存在同名， 否则抛错
+
+
+
+需要重新整理合并Component
+1) SoundManager的init_component参数个数为0
+2) 各个Component有引用Globals AvatarMember
+3)_host_fini没有参数
+4) inquirePriceMoneyCb
+5) 把合并的Globals改为import形式
