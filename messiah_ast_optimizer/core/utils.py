@@ -155,8 +155,8 @@ def fold_binop(op, src, dst):
 	return cosnt.UNKNOW if cls not in const.BIN_OPERATOR else const.BIN_OPERATOR[cls](src, dst)
 
 
-def new_importfrom(module, name, asname, level=0, parent=None):
-	names = [ast.alias(name=name, asname=asname)]
+def new_importfrom(module, names, level=0, parent=None):
+	names = [ast.alias(name=name, asname=asname) for name, asname in names]
 	node = ast.ImportFrom(module=module, names=names, level=level)
 	node.__preinit__(parent)
 	node.__postinit__()

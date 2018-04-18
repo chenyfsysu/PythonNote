@@ -17,8 +17,12 @@ eg: Component A: from Model import Model
 
 
 需要重新整理合并Component
-1) SoundManager的init_component参数个数为0
-2) 各个Component有引用Globals AvatarMember
-3)_host_fini没有参数
-4) inquirePriceMoneyCb
-5) 把合并的Globals改为import形式
+1) Component分析单个模块
+
+
+#### Constant Optimizer
+
+
+#### Inline Optimzer
+1）装饰器inline
+2）Buffs、Pskills的get function Inline

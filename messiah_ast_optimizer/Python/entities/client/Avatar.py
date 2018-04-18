@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import const
-import avatarmembers
+import avtmembers
 
 
 
@@ -16,7 +16,7 @@ class AvatarModelComponent(object, ):
         return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
 @with_tag('IsAvatar')
-@Components(AvatarModelComponent, *avatarmembers.importall())
+@Components(AvatarModelComponent, *avtmembers.importall())
 class Avatar(ClientAreaEntity, ):
     Property('school')
     USE = 'cCombatUnit'
@@ -26,6 +26,6 @@ class Avatar(ClientAreaEntity, ):
         return True
 
 
-@Components(*avatarmembers.importall())
+@Components(*avtmembers.importall())
 class PlayerAvatar(object):
     pass

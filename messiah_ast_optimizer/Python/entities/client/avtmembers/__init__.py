@@ -5,5 +5,4 @@ def importall():
 	return (
 		__import__("impCombat", globals()),
 		__import__("impPokemon", globals()),
-		__import__("impDoubleRide", globals()),
 	)

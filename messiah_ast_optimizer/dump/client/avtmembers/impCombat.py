@@ -12,6 +12,13 @@ class AvatarMember(object):
 	def doAttack(self):
 		print 'impCombat AvatarMember'
 
+	@property
+	def name(self):
+		return self.name
+
+	@name.setter
+	def name(self):
+		print 'ggggg'
 
 class PlayerAvatarMember(AvatarMember):
 	def doAttack(self):

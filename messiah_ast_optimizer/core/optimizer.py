@@ -112,7 +112,7 @@ class MessiahOptimizer(ConfigHandlerMixin, LogHandlerMixin):
 		for fullpath in files:
 			relpath = self.filter_files[fullpath]
 			node = self.transform_walker.walk(fullpath, relpath)
-			fullpath = os.path.join('dump', relpath)
+			# fullpath = os.path.join('dump', relpath)
 			if self.transform_walker.context.dirty:
 				self.rewrite(fullpath, node)
 
