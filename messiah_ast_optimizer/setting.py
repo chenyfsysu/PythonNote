@@ -33,3 +33,7 @@ CONFIG_INLINE_CONST = (
 CONST_INLINE_TAG = '@inline'
 INLINE_CONST_FILES = INLINE_CONST + CONFIG_INLINE_CONST
 CONST_ATTRIBUTES = ('const', 'cconst', 'sconst')  # 只有这些名字的Attribute才会检查，避免每个Attribute都要load出来
+
+
+"""INLINE OPTIMIZER"""
+INLINE_FUNC_TAG = 'inline'

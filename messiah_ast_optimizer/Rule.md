@@ -26,3 +26,9 @@ eg: Component A: from Model import Model
 #### Inline Optimzer
 1）装饰器inline
 2）Buffs、Pskills的get function Inline
+3) 能否利用MonkeyType的功能来进行inline
+
+
+
+1) Tick合并
+2） 小函数Inline
