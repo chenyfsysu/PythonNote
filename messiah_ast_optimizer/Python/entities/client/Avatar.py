@@ -25,13 +25,6 @@ class Avatar(ClientAreaEntity, ):
     def checkSFXVisible(self):
         return True
 
-    @inline
-    def func(self):
-        return self.data.get(self.id, {}).get('call', '')
-
-    def call(self):
-        self.func()
-
 
 @Components(*avtmembers.importall())
 class PlayerAvatar(object):

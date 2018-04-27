@@ -34,6 +34,9 @@ class Node(object):
 	def __postinit__(self):
 		pass
 
+	def release(self):
+		self.parent = None
+
 	def eval(self, *args):
 		raise MEvalException('Node Class of %s did not define eval function' % self.__class__.__name__)
 
@@ -90,6 +93,10 @@ class ScopeNode(Node):
 	def __preinit__(self, parent):
 		Node.__preinit__.im_func(self, parent)
 
+	def release(self):
+		Node.release(self)
+		self.scope = None
+
 	def load(self, name, only_locals=True):
 		sc = self.scope.identify(name)
 		if sc == NT_LOCAL:
@@ -129,6 +136,29 @@ class arguments(Node):
 
 	def argsFlag(self):
 		return len(self.args), self.vararg is None, self.kwarg is None
+
+	def unpackPosArgs(self, callsite, is_method=False):
+		pos_args = {}
+		bias = 1 if is_method else 0
+		if len(callsite.args) + bias > len(self.args):
+			raise TypeError('too many arguments provied')
+
+		if is_method:
+			if not isinstance(callsite.func, _ast.Attribute):
+				raise TypeError('call method with no instance')
+
+			pos_args[self.args[0].id] = callsite.func.value
+
+		for idx, arg in enumerate(callsite.args):
+			pos_args[self.args[idx + bias].id] = arg
+
+		for keyword in callsite.keywords:
+			if keyword.arg in pos_args:
+				raise TypeError('arguments of %s already provied' % keyword.arg)
+
+			pos_args[keyword.arg] = keyword.value
+
+		return pos_args
 
 
 @dynamic_extend(_ast.boolop)

@@ -32,3 +32,5 @@ eg: Component A: from Model import Model
 
 1) Tick合并
 2） 小函数Inline
+
+########## 继续努力！！！！！！！！！！

@@ -2,6 +2,7 @@
 
 from const import NT_LOCAL, NT_GLOBAL_IMPLICIT, NT_GLOBAL_EXPLICIT, NT_FREE, NT_CELL, NT_UNKNOWN, NT_DUMP
 from exception import MEvalException
+
 import ast
 
 
@@ -24,7 +25,10 @@ class PyScope(object):
 				del self.locals[name]
 
 	def cells(self):
-		return [name for name, val in self.lookup.iteritems() if val == NT_CELL]
+		return [name for name, sc in self.lookup.iteritems() if sc == NT_CELL]
+
+	def globals(self):
+		return [name for name, sc in self.lookup.iteritems() if sc in (NT_GLOBAL_EXPLICIT, NT_GLOBAL_IMPLICIT)]
 
 	def __repr__(self):
 		msg = '\n'.join(['%s:  %s' % (name, NT_DUMP[sc]) for name, sc in self.lookup.iteritems()])

@@ -2,6 +2,27 @@
 
 import const
 import avtmembers
+from data import skill_data
+
+class iBuff(object, ):
+
+    @inline
+    def getIgnoreCombatPropsOnly(self):
+        return self.dataGetter('ignoreCombatPropsOnly', 0)
+
+class iBuffs(object, ):
+
+    def calcConvertProps(self):
+        res = set()
+        combatPropsOnly = self.getCombatPropsOnly()
+        for buff in self.itervalues():
+            if (combatPropsOnly and (not buff.dataGetter('ignoreCombatPropsOnly', 0))):
+                continue
+            data = buff.data
+            attrconverts = data.get('attrconverts', ())
+            for attrconvert in attrconverts:
+                res.add(attrconvert)
+        return res
 
 class AvatarModelComponent(object, ):
 
@@ -23,11 +44,13 @@ class Avatar(ClientAreaEntity, ):
         return True
 
     @inline
-    def func(self):
-        return self.data.get(self.id, {}).get('call', '')
+    def func(self, a, b, c):
+        return skill_data.get(self.id, {}).get(b, c)
 
     def call(self):
-        self.data.get(self.id, {}).get('call', '')
+        name = 'coco'
+        b = 22
+        positive = skill_data.get(buff.id, {}).get(b, name)
 
 @Components(*avtmembers.importall())
 class PlayerAvatar(object, ):

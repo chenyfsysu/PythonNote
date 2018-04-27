@@ -150,6 +150,11 @@ def unpack_sequence(target, value):
 		return unpack_sequence(target, None)
 
 
+def calc_augassign(src, op, value):
+	dst = utils.get_constant(node.value)
+	return const.UNKNOW if dst == const.UNKNOW else fold_binop(op, src, dst)
+
+
 def fold_binop(op, src, dst):
 	cls = op.__class__
 	return cosnt.UNKNOW if cls not in const.BIN_OPERATOR else const.BIN_OPERATOR[cls](src, dst)
@@ -162,11 +167,6 @@ def new_importfrom(module, names, level=0, parent=None):
 	node.__postinit__()
 
 	return node
-
-
-def calc_augassign(src, op, value):
-	dst = utils.get_constant(node.value)
-	return const.UNKNOW if dst == const.UNKNOW else fold_binop(op, src, dst)
 
 
 def unparse_src(node):
@@ -205,6 +205,25 @@ def topo_sort(verts, edges, relies=None):
 		raise RuntimeError('cannot process topological sorting, recursive dependency exsits, %s' % remains)
 
 	return sorted_lst
+
+
+class RenameVisitor(ast.NodeTransformer):
+	FORBIDDEN_NAMES = ('__name__', '__file__', '__package__', '__doc__', 'globals', 'locals')
+
+	def __init__(self, name, rename_prefix='', names_mapping=None):
+		self.name = name
+		self.rename_prefix = rename_prefix
+		self.names_mapping = names_mapping or {}
+
+	def visit_Name(self, node):
+		if node.id in self.FORBIDDEN_NAMES:
+			raise RuntimeError('Inline function of %s cannot use fobidden name %s' % (self.name, node.id))
+
+		if node.id in self.names_mapping:
+			return self.names_mapping[node.id]
+
+		return node
+
 
 
 if __name__ == '__main__':
