@@ -4,6 +4,7 @@ from core.base import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTok
 from core.tools import RenameVisitor
 
 import ast
+import copy
 
 """
 1）
@@ -112,10 +113,14 @@ class InlineTransformer(MessiahStepTransformer):
 		if not self.mergeGlobalInfers(node, callee.infers):
 			return node
 
+		body = body.clone()
 		mapping = callee.func.args.unpackPosArgs(node, callee.is_method)
 		RenameVisitor('', names_mapping=mapping).visit(body)
 		context.markDirty(True)
 		return body.value
+
+	def visit_Attribute(self, node, context):
+		pass
 
 	def mergeGlobalInfers(self, node, infers):
 		module = node.nModule()

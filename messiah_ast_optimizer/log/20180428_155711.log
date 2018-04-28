@@ -1,0 +1,25 @@
+2018-04-28 15:57:11,167 - TokenizeWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-04-28 15:57:11,167 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-04-28 15:57:11,167 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-28 15:57:11,168 - TokenizeWalker - DEBUG - processing: common\iBuffs.py
+2018-04-28 15:57:11,196 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-28 15:57:11,207 - TokenizeWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-28 15:57:11,209 - TokenizeWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-28 15:57:11,210 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-04-28 15:57:11,210 - VisitWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-04-28 15:57:11,211 - VisitWalker - DEBUG - processing: common\const.py
+2018-04-28 15:57:11,213 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-28 15:57:11,213 - VisitWalker - DEBUG - processing: common\iBuffs.py
+2018-04-28 15:57:11,283 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-28 15:57:11,285 - VisitWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-28 15:57:11,286 - VisitWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-28 15:57:11,289 - VisitWalker - DEBUG - processing: client\Avatar.py
+2018-04-28 15:57:11,290 - TransformWalker - DEBUG - processing: client\Avatar.py
+2018-04-28 15:57:11,295 - TransformWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-04-28 15:57:11,296 - TransformWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-04-28 15:57:11,298 - TransformWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-04-28 15:57:11,299 - TransformWalker - DEBUG - processing: common\iBuffs.py
+2018-04-28 15:57:11,371 - MessiahOptimizer - DEBUG - dump\common\iBuffs.py is dirty, file will be rewrite
+2018-04-28 15:57:11,392 - TransformWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-04-28 15:57:11,394 - TransformWalker - DEBUG - processing: common\const.py
+2018-04-28 15:57:11,395 - TransformWalker - DEBUG - processing: client\avtmembers\impCombat.py

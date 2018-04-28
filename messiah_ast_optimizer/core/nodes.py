@@ -37,6 +37,15 @@ class Node(object):
 	def release(self):
 		self.parent = None
 
+	def clone(self):
+		fields = {}
+
+		for field in self._fields:
+			val = getattr(self, field)
+			fields[field] = val.clone() if isinstance(val, _ast.AST) else val
+
+		return self.__class__(**fields)
+
 	def eval(self, *args):
 		raise MEvalException('Node Class of %s did not define eval function' % self.__class__.__name__)
 

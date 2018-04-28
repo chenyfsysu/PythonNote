@@ -179,7 +179,7 @@ class iBuff(CustomMapType, ):
         return self.dataGetter('disable_skillnos', ())
 
     def canDisableSkill(self):
-        return (self.skillDisabled() or (buff.dataGetter('iNoSkill', 0) > 0) or self.getDisableSkillNos())
+        return (self.skillDisabled() or (self.dataGetter('iNoSkill', 0) > 0) or self.getDisableSkillNos())
 
     def isNoTelport(self):
         return self.isNoTransmit(const.BUFF_NO_TELEPORT_TRANSMIT)

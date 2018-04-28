@@ -1,28 +1,8 @@
 # -*- coding:utf-8 -*-
 
 import const
+import const
 import avtmembers
-from data import skill_data
-
-class iBuff(object, ):
-
-    @inline
-    def getIgnoreCombatPropsOnly(self):
-        return self.dataGetter('ignoreCombatPropsOnly', 0)
-
-class iBuffs(object, ):
-
-    def calcConvertProps(self):
-        res = set()
-        combatPropsOnly = self.getCombatPropsOnly()
-        for buff in self.itervalues():
-            if (combatPropsOnly and (not buff.dataGetter('ignoreCombatPropsOnly', 0))):
-                continue
-            data = buff.data
-            attrconverts = data.get('attrconverts', ())
-            for attrconvert in attrconverts:
-                res.add(attrconvert)
-        return res
 
 class AvatarModelComponent(object, ):
 
@@ -35,23 +15,47 @@ class AvatarModelComponent(object, ):
         return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
 @with_tag('IsAvatar')
-@Components(AvatarModelComponent, *avtmembers.importall())
+@Components()
 class Avatar(ClientAreaEntity, ):
     Property('school')
     USE = 'cCombatUnit'
 
     def checkSFXVisible(self):
         return True
+    Property('ai')
+    CombatType = const.COMBATUNIT_TYPE_AVT
+    func = 1
+    Property('combatPokemonId', '')
+    Property('shadowPokemonId', '')
 
-    @inline
-    def func(self, a, b, c):
-        return skill_data.get(self.id, {}).get(b, c)
+    def getModelScale(self):
+        if self.monster_shapeshift:
+            if self.buffs.needCombatprotoScale():
+                return CMD.data.get(self.monster_shapeshift, {}).get('Scale', 1.0)
+        elif self.model_shapeshift:
+            return self.buffs.ModelShapeShiftScale()
+        return school_data.data.get(self.school, {}).get('Scale', 1.0)
 
-    def call(self):
-        name = 'coco'
-        b = 22
-        positive = skill_data.get(buff.id, {}).get(b, name)
+    def updateAllVisible(self):
+        ModelSeqLoader().RefreshDismiss()
 
-@Components(*avtmembers.importall())
+    def doAttack(self):
+        print 'impCombat AvatarMember'
+
+    def getCombatPokemon(self):
+        return EntityManager.getentity(self.combatPokemonId)
+
+@Components()
 class PlayerAvatar(object, ):
     pass
+    Property('ai')
+    CombatType = const.COMBATUNIT_TYPE_AVT
+
+    def updateAllVisible(self):
+        ModelSeqLoader().RefreshDismiss()
+
+    def doAttack(self):
+        print 'impCombat AvatarMember'
+
+    def doAttack(self):
+        print 'impCombat PlayerAvatarMember'
