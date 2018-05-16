@@ -1,0 +1,33 @@
+2018-05-16 17:20:43,572 - TokenizeWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-05-16 17:20:43,572 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-05-16 17:20:43,573 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-05-16 17:20:43,573 - TokenizeWalker - DEBUG - processing: common\iBuffs.py
+2018-05-16 17:20:43,601 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-05-16 17:20:43,601 - TokenizeWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-05-16 17:20:43,601 - TokenizeWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-05-16 17:20:43,602 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-05-16 17:20:43,604 - VisitWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-05-16 17:20:43,605 - VisitWalker - DEBUG - processing: common\const.py
+2018-05-16 17:20:43,607 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-05-16 17:20:43,608 - VisitWalker - DEBUG - processing: common\iBuffs.py
+2018-05-16 17:20:43,677 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-05-16 17:20:43,677 - VisitWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-05-16 17:20:43,678 - VisitWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-05-16 17:20:43,680 - VisitWalker - DEBUG - processing: client\Avatar.py
+2018-05-16 17:20:43,684 - TransformWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-05-16 17:20:43,686 - TransformWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-05-16 17:20:43,687 - TransformWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-05-16 17:20:43,687 - TransformWalker - DEBUG - processing: common\iBuffs.py
+2018-05-16 17:20:43,760 - MessiahOptimizer - DEBUG - dump\common\iBuffs.py is dirty, file will be rewrite
+2018-05-16 17:20:43,782 - TransformWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-05-16 17:20:43,782 - TransformWalker - DEBUG - processing: common\const.py
+2018-05-16 17:20:43,783 - TransformWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-05-16 17:20:43,786 - TransformWalker - DEBUG - processing: client\Avatar.py
+2018-05-16 17:20:43,789 - ComponentTransformer - DEBUG - Start merge class Avatar
+2018-05-16 17:20:43,792 - ComponentTransformer - DEBUG - start merge global entries of Python\entities\client\Avatar.py
+2018-05-16 17:20:43,792 - ComponentTransformer - DEBUG - start merge global entries of Python\entities\client\avtmembers\impCombat.py
+2018-05-16 17:20:43,793 - ComponentTransformer - DEBUG - start merge global entries of Python\entities\client\avtmembers\impPokemon.py
+2018-05-16 17:20:43,793 - ComponentTransformer - DEBUG - Start merge class PlayerAvatar
+2018-05-16 17:20:43,793 - ComponentTransformer - DEBUG - start merge global entries of Python\entities\client\avtmembers\impCombat.py
+2018-05-16 17:20:43,793 - ComponentTransformer - DEBUG - start merge global entries of Python\entities\client\avtmembers\impCombat.py
+2018-05-16 17:20:43,795 - MessiahOptimizer - DEBUG - dump\client\Avatar.py is dirty, file will be rewrite

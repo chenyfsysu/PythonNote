@@ -106,7 +106,7 @@ class AstScopeMixin(IVisitor):
 		for alias in node.names:
 			name, asname = alias.name, alias.asname
 			if name != "*":
-				scope.addLocals(name, node)
+				scope.addLocals(asname or name, node)
 		return node
 
 	def postvisit_Delete(self, node):

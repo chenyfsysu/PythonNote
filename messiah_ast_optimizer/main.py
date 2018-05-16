@@ -10,8 +10,7 @@ from steps.component_optimizer import ComponentOptimizeStep
 
 
 
-# @OptimizeStep(ConstantOptimizeStep, InlineOptimizeStep, ComponentOptimizeStep)
-@OptimizeStep(InlineOptimizeStep)
+@OptimizeStep(ConstantOptimizeStep, InlineOptimizeStep, ComponentOptimizeStep)
 class Optimizer(MessiahOptimizer):
 	pass
 

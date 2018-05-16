@@ -1,0 +1,27 @@
+2018-05-02 16:37:43,058 - TokenizeWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-05-02 16:37:43,059 - TokenizeWalker - DEBUG - processing: common\const.py
+2018-05-02 16:37:43,059 - TokenizeWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-05-02 16:37:43,059 - TokenizeWalker - DEBUG - processing: common\iBuffs.py
+2018-05-02 16:37:43,085 - TokenizeWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-05-02 16:37:43,088 - TokenizeWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-05-02 16:37:43,088 - TokenizeWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-05-02 16:37:43,088 - TokenizeWalker - DEBUG - processing: client\Avatar.py
+2018-05-02 16:37:43,089 - VisitWalker - DEBUG - processing: client\avtmembers\impCombat.py
+2018-05-02 16:37:43,091 - VisitWalker - DEBUG - processing: common\const.py
+2018-05-02 16:37:43,092 - VisitWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-05-02 16:37:43,092 - VisitWalker - DEBUG - processing: common\iBuffs.py
+2018-05-02 16:37:43,161 - VisitWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-05-02 16:37:43,164 - VisitWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-05-02 16:37:43,165 - VisitWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-05-02 16:37:43,167 - VisitWalker - DEBUG - processing: client\Avatar.py
+2018-05-02 16:37:43,170 - TransformWalker - DEBUG - processing: client\Avatar.py
+2018-05-02 16:37:43,173 - InlineTransformer - WARNING - inline function of name can not merge in Python\entities\client\Avatar.py
+2018-05-02 16:37:43,174 - MessiahOptimizer - DEBUG - dump\client\Avatar.py is dirty, file will be rewrite
+2018-05-02 16:37:43,176 - TransformWalker - DEBUG - processing: client\avtmembers\__init__.py
+2018-05-02 16:37:43,177 - TransformWalker - DEBUG - processing: client\avtmembers\impPokemon.py
+2018-05-02 16:37:43,178 - TransformWalker - DEBUG - processing: common\pokemon\__init__.py
+2018-05-02 16:37:43,180 - TransformWalker - DEBUG - processing: common\iBuffs.py
+2018-05-02 16:37:43,255 - MessiahOptimizer - DEBUG - dump\common\iBuffs.py is dirty, file will be rewrite
+2018-05-02 16:37:43,276 - TransformWalker - DEBUG - processing: common\pokemon\pconst.py
+2018-05-02 16:37:43,279 - TransformWalker - DEBUG - processing: common\const.py
+2018-05-02 16:37:43,279 - TransformWalker - DEBUG - processing: client\avtmembers\impCombat.py

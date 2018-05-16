@@ -163,8 +163,9 @@ class iBuff(CustomMapType):
 	def ShapeShiftLv(self):
 		return self.dataGetter("shapeshift_lv", 0)
 
-	def ShapeShiftName(self):
-		return self.dataGetter("shapeshift_name", 0)
+	@inline
+	def iBuff_ShapeShiftName(self):
+		return PNID.dataGetter("shapeshift_name", 0)
 
 	def invisible(self):
 		return self.dataGetter("Invisible", 0) > 0
@@ -211,7 +212,8 @@ class iBuff(CustomMapType):
 		return self.isNoTransmit(const.BUFF_NO_NPC_TRANSMIT)
 
 	def isNoClineRet(self):
-		return self.isNoTransmit(const.BUFF_NO_CLINE_RETURN)
+		const = 1
+		return self.isNoTransmit(const.SKILL_ID)
 
 	def hasTaunt(self):
 		return self.dataGetter("Taunt", 0) > 0

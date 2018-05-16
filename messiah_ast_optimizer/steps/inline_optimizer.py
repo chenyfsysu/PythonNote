@@ -2,6 +2,7 @@
 
 from core.base import MessiahStepVisitor, MessiahStepTransformer, MessiahStepTokenizer, MessiahOptimizerStep
 from core.tools import RenameVisitor
+from core import const
 
 import ast
 import copy
@@ -61,20 +62,35 @@ class InlineVisitor(MessiahStepVisitor):
 		if not self.canCalleeInline(node):
 			return
 
+		success, infers = self.dumpGlobalInfers(node)
+		if not success:
+			return
+
+		self.inline_funcs[node.name] = Callee(node.name, node, isinstance(node.parent, ast.ClassDef), infers)
+
+	def dumpGlobalInfers(self, node):
 		global_names = node.scope.globals()
 		module = node.nModule()
 		
 		global_infers = {}
 		for name in global_names:
-			if name not in module.scope.locals:
-				continue
-			infer = module.scope.locals[name]
-			if not isinstance(infer, (ast.Import, ast.ImportFrom)):
-				return
+			if name in const.MODULE_RELATED_NAMES:
+				self.logger.warning('inline function of %s infer to module related name of %s', node.name, name)
+				return False, {}
 
-			global_infers[name] = infer
+			if name in module.scope.locals:
+				infer = module.scope.locals[name]
+				if not isinstance(infer, (ast.Import, ast.ImportFrom)):
+					self.logger.warning('inline function of %s infer to non import name of %s', node.name, name)
+					return False, {}
 
-		self.inline_funcs[node.name] = Callee(node.name, node, isinstance(node.parent, ast.ClassDef), global_infers)
+				global_infers[name] = infer.clone()
+			else:
+				if not hasattr(__builtins__, name):
+					self.logger.warning('inline function of %s infer to unknow name of %s', node.name, name)
+					return False, {}
+
+		return True, global_infers
 
 	def canCalleeInline(self, node):
 		args = node.args
@@ -93,16 +109,17 @@ class InlineTransformer(MessiahStepTransformer):
 		self.global_infers = {}
 
 	def visit_Call(self, node, context):
-		if not self.canCallsiteInline(node):
-			return node
-
 		func = node.func
 		name = func.id if isinstance(func, ast.Name) else func.attr if isinstance(func, ast.Attribute) else ''
 
 		if not name or name not in self.inline_funcs:
 			return node
 
+		if not self.canCallsiteInline(node):
+			return node
+
 		if isinstance(func, ast.Attribute) and not isinstance(func.value, ast.Name):
+			self.logger.warning('inline function of %s can not merge in %s', name, node.nModule().__file__)
 			return node
 
 		callee = self.inline_funcs[name]
@@ -110,7 +127,7 @@ class InlineTransformer(MessiahStepTransformer):
 		if not isinstance(body, ast.Return):
 			return node
 
-		if not self.mergeGlobalInfers(node, callee.infers):
+		if not self.mergeGlobalInfers(node, callee):
 			return node
 
 		body = body.clone()
@@ -120,9 +137,10 @@ class InlineTransformer(MessiahStepTransformer):
 		return body.value
 
 	def visit_Attribute(self, node, context):
-		pass
+		return node
 
-	def mergeGlobalInfers(self, node, infers):
+	def mergeGlobalInfers(self, node, callee):
+		infers = callee.infers
 		module = node.nModule()
 
 		global_infers = {}
@@ -137,6 +155,11 @@ class InlineTransformer(MessiahStepTransformer):
 				global_infers[name] = infer
 			else:
 				if not isinstance(cur, (ast.Import, ast.ImportFrom)) or type(cur) != type(infer):
+					self.logger.warning('inline function of %s cannot inline with %s because of duplicate name of %s', callee.func.name, module.__file__, name)
+					return False
+
+				names = [name] if isinstance(ast.Import) else []
+				if cur.findModule(*names) != infer.findModule(*names):
 					return False
 
 		self.global_infers.update(global_infers)
