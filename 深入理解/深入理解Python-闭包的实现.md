@@ -19,7 +19,7 @@ def do_sth():
 ``` python
 [.... 'func_closure', 'func_code', 'func_defaults', 'func_dict', 'func_doc', 'func_globals', 'func_name']
 ```
-一堆func开头的的属性引起了我们的注意，**func_closure**更是格外显目。**closure**不正是闭包的意思吗，这里面的内容一定和闭包紧密相关。我们尝试打印打印**do_sth**的**func_closure**的内容，遗憾的是居然是**None**。再仔细想想，**do_sth**只是外层函数，而**lambda**才是闭包，所以闭包的内容会不会再lambda（闭包）函数中。打印闭包的**func_closure**内容（可以把闭包用变量保存，再使用dis函数），果然在这里发现了特别的内容:
+一堆func开头的的属性引起了我们的注意，**func_closure**更是格外显目。**closure**不正是闭包的意思吗，这里面的内容一定和闭包紧密相关。我们尝试打印打印**do_sth**的**func_closure**的内容，遗憾的是居然是**None**。再仔细想想，**do_sth**只是外层函数，而**lambda**才是闭包，所以闭包的内容会不会在lambda（闭包）函数中。打印闭包的**func_closure**内容（可以把闭包用变量保存，再使用dis函数），果然在这里发现了特别的内容:
 
 ``` python
 (<cell at 0x024FD730: int object at 0x004AA9E4>,)
@@ -43,8 +43,13 @@ def do_sth():
              3 LOAD_DEREF               0 (i)
              6 CALL_FUNCTION            1
 ```
-我们关注到4个特殊的字节码：**STORE_DEREF**、**LOAD_CLOSURE**、**MAKE_CLOSURE**、**LOAD_DEREF**。接下来从Pyhton源码的层面查看这四个字节码的实现，必能解答闭包的问题。
-###  四、源码实现
+我们关注到4个特殊的字节码：**STORE_DEREF**、**LOAD_CLOSURE**、**MAKE_CLOSURE**、**LOAD_DEREF**。从字节码的意思来看，这个四个字节码做的内容也很清晰了：
+> * STORE_DEREF：外层函数保存闭包使用的变量内容
+> * LOAD_CLOSURE：获取所有的必要使用的变量内容
+> * MAKE_CLOSURE：创建闭包函数
+> * LOAD_DEREF：内层函数获取完成函数的变量内容
+
+到这一步，已经对闭包的实现流程已经有了大概的宏观的理解：创建闭包时，会把闭包的使用的变量内容保存在闭包函数内。接下来再深入到每个字节码的实现，闭包的问题就能游刃而解了。
 #### 1）STORE_DEREF
 
 ``` cpp
@@ -57,6 +62,7 @@ TARGET(STORE_DEREF)
     DISPATCH();
 }
 ```
+
 #### 2）LOAD_CLOSURE
 ``` cpp
 TARGET(LOAD_CLOSURE)
@@ -69,6 +75,7 @@ TARGET(LOAD_CLOSURE)
 }
 ```
 #### 3）MAKE_CLOSURE
+
 ``` cpp
 TARGET(MAKE_CLOSURE)
 {
@@ -87,6 +94,7 @@ TARGET(MAKE_CLOSURE)
 }
 ```
 #### 4）LOAD_DEREF
+
 ``` cpp
 TARGET(LOAD_DEREF)
 {
@@ -99,25 +107,19 @@ TARGET(LOAD_DEREF)
     ...
 }
 ```
-### 五、co_cellvars和co_freevars
+从字节码的源码实现上看，这四个字节码的实现内容和我们上面的猜想是一致的。**STORE_DEREF**外层函数保存闭包使用内容，**LOAD_CLOSURE**获取所有使用内容用于创建闭包，**MAKE_CLOSURE**创建闭包，**LOAD_DEREF**是闭包函数获取使用内容。这几个字节码都很简单，我们注意到**MAKE_CLOSURE**的保存闭包使用的内容的函数**PyFunction_SetClosure(x, v)**, 它的实现是：
 ``` cpp
-typedef struct {
-  ...
-    PyObject *co_freevars;  /* tuple of strings (free variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-} PyCodeObject;
+int PyFunction_SetClosure(PyObject *op, PyObject *closure)
+{
+    ...
+    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
+    return 0;
+}
 ```
-### 六、PyCellObject
-``` cpp
-typedef struct {
-  PyObject_HEAD
-  PyObject *ob_ref; /* Content of the cell or NULL when empty */
-} PyCellObject;
-```
+可以看到它正是保存到函数对象的**func_closure**中，这也验证了我们在脚本层查看的内容。而接下来的内容只有一个，保存到闭包中的引用内容到底保存了什么？我们看到外层函数保存和闭包函数获取的实现是**PyCellGet**和**PyCellSet**：
 
 ``` cpp
-PyObject *
-PyCell_Get(PyObject *op)
+PyObject *PyCell_Get(PyObject *op)
 {
     if (!PyCell_Check(op)) {
         PyErr_BadInternalCall();
@@ -126,11 +128,8 @@ PyCell_Get(PyObject *op)
     Py_XINCREF(((PyCellObject*)op)->ob_ref);
     return PyCell_GET(op);
 }
-```
 
-``` cpp
-int
-PyCell_Set(PyObject *op, PyObject *obj)
+int PyCell_Set(PyObject *op, PyObject *obj)
 {
     PyObject* oldobj;
     if (!PyCell_Check(op)) {
@@ -144,4 +143,30 @@ PyCell_Set(PyObject *op, PyObject *obj)
     return 0;
 }
 ```
-### 七、总结
+可以看到**PyCellGet**和**PyCellSet**都共同指向了一个内容：**PyCellObject**!
+
+### 五、PyCellObject
+接下来就进入**PyCellObject**, 它的声明简单：
+``` cpp
+typedef struct {
+  PyObject_HEAD
+  PyObject *ob_ref; /* Content of the cell or NULL when empty */
+} PyCellObject;
+```
+我们关注到一个重要信息**ob_ref**，ref是引用的意思吗？再回头看**PyCell_Set**, 它的真正实现是**PyCell_SET**：
+``` cpp
+#define PyCell_SET(op, v) (((PyCellObject *)(op))->ob_ref = v)
+```
+果然**ob_ref**是保存了对外层函数变量的引用，**PyCell_SET**把引用的内容保存在**PyCellObject**的**ob_ref**中，引用的时候也通过**Py_XINCREF(obj)**增加了引用计数。看到这里一下子豁然开朗了，第一节提到的Python的坑也得到了解决：**因为闭包函数中保存的是对外层函数变量的引用**。在第一节中通过for循环生成闭包函数，实际上他们引用的内容都是同一个：**i**！而经过for循环后，它的值正是4，所以每个lambda的打印值都是4。
+
+## 六、co_cellvars和co_freevars
+上面已经了解到了闭包引用的内容的保存，读取，也知道了保存的什么内容。但是还有一个疑问：怎么决定要保存什么内容到**func_closure**上？显示把外层函数的所有变量都保存是不切实际的，我们很容易想到闭包函数要用到什么内容就保存什么内容。那这个在源码中是怎么实现的呢？再回到字节码**STORE_DEREF**和**LOAD_DEREF**的实现中，我们在之前忽略了一个内容：取出cell是在：**x = freevars[oparg]**，那freevars是什么？看到前面**freevars**的定义中：
+``` cpp
+typedef struct {
+  ...
+    PyObject *co_freevars;  /* tuple of strings (free variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+} PyCodeObject;
+```
+
+### 七、结语
