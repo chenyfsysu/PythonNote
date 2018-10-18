@@ -162,6 +162,32 @@ typedef struct {
 ## 六、co_cellvars和co_freevars
 上面已经了解到了闭包引用的内容的保存，读取，也知道了保存的什么内容。但是还有一个疑问：怎么决定要保存什么内容到**func_closure**上？显示把外层函数的所有变量都保存是不切实际的，我们很容易想到闭包函数要用到什么内容就保存什么内容。那这个在源码中是怎么实现的呢？再回到字节码**STORE_DEREF**和**LOAD_DEREF**的实现中，我们在之前忽略了一个内容：取出cell是在：**x = freevars[oparg]**，那freevars是什么？看到前面**freevars**的定义中：
 ``` cpp
+for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
+    cellname = PyString_AS_STRING(
+        PyTuple_GET_ITEM(co->co_cellvars, i));
+    found = 0;
+    for (j = 0; j < nargs; j++) {
+        argname = PyString_AS_STRING(
+            PyTuple_GET_ITEM(co->co_varnames, j));
+        if (strcmp(cellname, argname) == 0) {
+            c = PyCell_New(GETLOCAL(j));
+            if (c == NULL)
+                goto fail;
+            GETLOCAL(co->co_nlocals + i) = c;
+            found = 1;
+            break;
+        }
+    }
+    if (found == 0) {
+        c = PyCell_New(NULL);
+        if (c == NULL)
+            goto fail;
+        SETLOCAL(co->co_nlocals + i, c);
+    }
+}
+}
+```
+``` cpp
 typedef struct {
   ...
     PyObject *co_freevars;  /* tuple of strings (free variable names) */
