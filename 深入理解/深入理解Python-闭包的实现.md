@@ -159,8 +159,12 @@ typedef struct {
 ```
 果然**ob_ref**是保存了对外层函数变量的引用，**PyCell_SET**把引用的内容保存在**PyCellObject**的**ob_ref**中，引用的时候也通过**Py_XINCREF(obj)**增加了引用计数。看到这里一下子豁然开朗了，第一节提到的Python的坑也得到了解决：**因为闭包函数中保存的是对外层函数变量的引用**。在第一节中通过for循环生成闭包函数，实际上他们引用的内容都是同一个：**i**！而经过for循环后，它的值正是4，所以每个lambda的打印值都是4。
 
-## 六、co_cellvars和co_freevars
+### 六、co_cellvars和co_freevars
 上面已经了解到了闭包引用的内容的保存，读取，也知道了保存的什么内容。但是还有一个疑问：怎么决定要保存什么内容到**func_closure**上？显示把外层函数的所有变量都保存是不切实际的，我们很容易想到闭包函数要用到什么内容就保存什么内容。那这个在源码中是怎么实现的呢？再回到字节码**STORE_DEREF**和**LOAD_DEREF**的实现中，我们在之前忽略了一个内容：取出cell是在：**x = freevars[oparg]**，那freevars是什么？看到前面**freevars**的定义中：
+``` cpp
+freevars = f->f_localsplus + co->co_nlocals;
+```
+而co_nlocals在**PyEval_EvalCodeEx**中初始化
 ``` cpp
 for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
     cellname = PyString_AS_STRING(
@@ -187,6 +191,7 @@ for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
 }
 }
 ```
+可以看到在执行code的字节码前，会把所有的cell都初始化。**PyCodeObject**中有两个重要的成员：**co_cellvars**和**co_freevars**。
 ``` cpp
 typedef struct {
   ...
@@ -194,5 +199,7 @@ typedef struct {
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
 } PyCodeObject;
 ```
+**co_cellvars**正是记录了所有的cell变量（即会被内层函数引用的变量），**co_freevars**则记录了所有的引用外层函数的free变量。记录在code中也说明了Python在编译期就已经决定了变量的类型：GLOBAL类型、LOCAL类型、CELL类型、FREE类型等。
 
 ### 七、结语
+至此已经学习了Python闭包实现的大部分内容，在Python层面遇到的一些坑不深入源码很难想透。而深入源码理解后，一切都会豁然开朗。
